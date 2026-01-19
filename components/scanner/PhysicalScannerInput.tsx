@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
-import { Box, Badge, Text, HStack, Icon } from '@chakra-ui/react';
+import { Badge, Text, HStack, Icon } from '@chakra-ui/react';
 import { LuScanLine } from 'react-icons/lu';
 import { usePhysicalScanner } from '@/hooks/usePhysicalScanner';
 
@@ -32,15 +32,16 @@ export function PhysicalScannerInput({
     return (
         <>
             {/* Hidden input field for capturing scanner input */}
-            <Box
-                as="input"
+            <input
                 ref={inputRef}
                 type="text"
-                position="absolute"
-                left="-9999px"
-                width="1px"
-                height="1px"
-                opacity={0}
+                style={{
+                    position: 'absolute',
+                    left: '-9999px',
+                    width: '1px',
+                    height: '1px',
+                    opacity: 0,
+                }}
                 tabIndex={-1}
                 autoComplete="off"
                 aria-hidden="true"
