@@ -24,29 +24,43 @@ async function seed() {
         // Check if new admin user already exists
         const existingAdmin = await findUserByEmail('admin@fitfuel.com');
 
+        const hashedPassword = await hashPassword('Admin123');
+
         if (existingAdmin) {
-            console.log('ℹ️  Admin user already exists with email: admin@fitfuel.com');
-            console.log('✅ Seed completed (no changes needed)');
-            process.exit(0);
+            console.log('🔄 Admin user already exists, updating password...');
+            const collection = await getUserCollection();
+            await collection.updateOne(
+                { email: 'admin@fitfuel.com' },
+                {
+                    $set: {
+                        password: hashedPassword,
+                        updatedAt: new Date()
+                    }
+                }
+            );
+            console.log('✅ Admin user password updated successfully!');
+            console.log(`   Email: ${existingAdmin.email}`);
+            console.log(`   Name: ${existingAdmin.name}`);
+            console.log(`   Role: ${existingAdmin.role}`);
+            console.log(`   ID: ${existingAdmin._id}`);
+        } else {
+            // Create new admin user
+            console.log('📝 Creating admin user...');
+
+            const adminUser = await createUser({
+                email: 'admin@fitfuel.com',
+                password: hashedPassword,
+                name: 'Admin',
+                role: 'admin',
+            });
+
+            console.log('✅ Admin user created successfully!');
+            console.log(`   Email: ${adminUser.email}`);
+            console.log(`   Name: ${adminUser.name}`);
+            console.log(`   Role: ${adminUser.role}`);
+            console.log(`   ID: ${adminUser._id}`);
         }
 
-        // Create new admin user
-        console.log('📝 Creating admin user...');
-
-        const hashedPassword = await hashPassword('Admin123!!!');
-
-        const adminUser = await createUser({
-            email: 'admin@fitfuel.com',
-            password: hashedPassword,
-            name: 'Admin',
-            role: 'admin',
-        });
-
-        console.log('✅ Admin user created successfully!');
-        console.log(`   Email: ${adminUser.email}`);
-        console.log(`   Name: ${adminUser.name}`);
-        console.log(`   Role: ${adminUser.role}`);
-        console.log(`   ID: ${adminUser._id}`);
         console.log('✅ Seed completed successfully!');
 
         process.exit(0);

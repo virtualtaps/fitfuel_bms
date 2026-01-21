@@ -20,11 +20,12 @@ async function getHandler(request: AuthenticatedRequest) {
         const collection = await getProductCollection();
         const query: any = {};
 
-        // Search filter
+        // Search filter - search by name, SKU, and category
         if (pagination.search) {
             query.$or = [
                 { name: { $regex: pagination.search, $options: 'i' } },
                 { sku: { $regex: pagination.search, $options: 'i' } },
+                { category: { $regex: pagination.search, $options: 'i' } },
             ];
         }
 

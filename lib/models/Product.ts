@@ -61,7 +61,7 @@ export function productToResponse(product: ProductDocument): ProductResponse {
         supplierContact: product.supplierContact,
         expiryDate: product.expiryDate,
         status: product.status || calculateStatus(product.stock, product.minStock),
-        price: `$${product.sellingPrice.toFixed(2)}`,
+        price: `QAR ${product.sellingPrice.toFixed(2)}`,
     };
 }
 

@@ -18,6 +18,8 @@ import {
     Dialog,
     Portal,
     CloseButton,
+    NativeSelect,
+    Field,
 } from "@chakra-ui/react";
 import {
     LuPlus,
@@ -66,8 +68,11 @@ export default function InventoryPage() {
 
     useEffect(() => {
         fetchCategories();
+    }, []);
+
+    useEffect(() => {
         fetchProducts();
-    }, [selectedCategory, selectedStatus]);
+    }, [selectedCategory, selectedStatus, searchQuery]);
 
     const fetchCategories = async () => {
         try {
@@ -112,7 +117,8 @@ export default function InventoryPage() {
         if (searchQuery) {
             const matchesSearch =
                 product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+                (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (product.category && product.category.toLowerCase().includes(searchQuery.toLowerCase()));
             if (!matchesSearch) return false;
         }
         const matchesCategory = !selectedCategory || selectedCategory === 'All' || product.category === selectedCategory;
@@ -327,29 +333,25 @@ export default function InventoryPage() {
                             </HStack>
                             <VStack align="start" gap={2}>
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">Category</Text>
-                                <HStack gap={2} flexWrap="wrap">
-                                    <Button
-                                        size="xs"
-                                        variant={!selectedCategory ? "solid" : "outline"}
-                                        colorPalette="gray"
-                                        onClick={() => setSelectedCategory(null)}
-                                        transition="all 0.15s"
-                                    >
-                                        All
-                                    </Button>
-                                    {categories.map((cat) => (
-                                        <Button
-                                            key={cat.id}
-                                            size="xs"
-                                            variant={selectedCategory === cat.name ? "solid" : "outline"}
-                                            colorPalette="gray"
-                                            onClick={() => setSelectedCategory(cat.name)}
-                                            transition="all 0.15s"
+                                <Box w="100%" maxW="300px">
+                                    <NativeSelect.Root size="sm">
+                                        <NativeSelect.Field
+                                            placeholder="All Categories"
+                                            value={selectedCategory || ""}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setSelectedCategory(value === "" ? null : value);
+                                            }}
                                         >
-                                            {cat.name}
-                                        </Button>
-                                    ))}
-                                </HStack>
+                                            <option value="">All Categories</option>
+                                            {categories.map((cat) => (
+                                                <option key={cat.id} value={cat.name}>
+                                                    {cat.name}
+                                                </option>
+                                            ))}
+                                        </NativeSelect.Field>
+                                    </NativeSelect.Root>
+                                </Box>
                             </VStack>
                             <VStack align="start" gap={2}>
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">Status</Text>
@@ -442,7 +444,7 @@ export default function InventoryPage() {
                                                 </Text>
                                             </Table.Cell>
                                             <Table.Cell>
-                                                <Text fontWeight="medium" fontSize="sm">{product.price || `QAR ${product.sellingPrice.toFixed(2)}`}</Text>
+                                                <Text fontWeight="medium" fontSize="sm">QAR {product.sellingPrice.toFixed(2)}</Text>
                                             </Table.Cell>
                                             <Table.Cell>
                                                 {product.expiryDate ? (

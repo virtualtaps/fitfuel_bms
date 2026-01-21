@@ -712,22 +712,6 @@ export default function InvoiceDetailPage() {
                                     </Box>
                                 )}
 
-                                {/* Partners Logo - Larger Width */}
-                                <Box px={2} pb={0.5} mb={0}>
-                                    <Flex justify="center" align="center">
-                                        <img
-                                            src="/partners.png"
-                                            alt="Our Partners"
-                                            style={{
-                                                width: "100%",
-                                                maxWidth: "950px",
-                                                height: "auto",
-                                                maxHeight: "120px",
-                                                objectFit: "contain"
-                                            }}
-                                        />
-                                    </Flex>
-                                </Box>
                             </Box>
 
                             {/* Footer Wave - Orange Beautiful - Fixed to Bottom */}

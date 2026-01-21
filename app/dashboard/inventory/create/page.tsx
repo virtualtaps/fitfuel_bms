@@ -478,7 +478,7 @@ export default function CreateProductPage() {
                                         </HStack>
                                         <HStack justify="space-between">
                                             <Text fontSize="sm" color="gray.600">Price</Text>
-                                            <Text fontSize="sm" fontWeight="medium">${sellingPrice || "0.00"}</Text>
+                                            <Text fontSize="sm" fontWeight="medium">QAR {sellingPrice || "0.00"}</Text>
                                         </HStack>
                                         <HStack justify="space-between">
                                             <Text fontSize="sm" color="gray.600">Stock</Text>

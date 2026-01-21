@@ -356,12 +356,28 @@ export default function QuotationDetailPage() {
                     border-left: 4px solid #7C3AED !important;
                 }
                 
+                /* Header section - fixed to top */
+                .quotation-header-section {
+                    position: relative;
+                    z-index: 1;
+                    background: white;
+                }
+                
                 /* Footer wave */
                 .footer-wave {
                     position: absolute;
                     bottom: 0;
                     left: 0;
                     right: 0;
+                    background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+                }
+                
+                /* Content area with padding for fixed header/footer */
+                .quotation-content-area {
+                    padding-top: 0;
+                    padding-bottom: 80px;
+                    position: relative;
+                    z-index: 2;
                 }
                 
                 @media print {
@@ -442,9 +458,33 @@ export default function QuotationDetailPage() {
                         print-color-adjust: exact !important;
                     }
                     
-                    /* Ensure content doesn't overlap with footer */
-                    .quotation-print-content > div {
-                        padding-bottom: 50px !important;
+                    /* Header section - not fixed in print, just normal flow */
+                    .quotation-header-section {
+                        position: relative !important;
+                        z-index: 1 !important;
+                        background: white !important;
+                        page-break-inside: avoid !important;
+                    }
+                    
+                    /* Fixed footer to bottom */
+                    .footer-wave {
+                        position: fixed !important;
+                        bottom: 0 !important;
+                        left: 0 !important;
+                        width: 210mm !important;
+                        height: 40px !important;
+                        z-index: 1000 !important;
+                        page-break-inside: avoid !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    /* Content area padding to prevent overlap with footer only */
+                    .quotation-content-area {
+                        padding-top: 0 !important;
+                        padding-bottom: 60px !important;
+                        position: relative !important;
+                        z-index: 2 !important;
                     }
                 }
             `}</style>
@@ -499,11 +539,13 @@ export default function QuotationDetailPage() {
                     {/* Quotation Document - A4 */}
                     <Card.Root border="none" bg="white" className="quotation-print-content" overflow="hidden">
                         <Card.Body p={0}>
-                            {/* Purple Accent Bar at Top */}
-                            <Box className="purple-accent-bar" h="8px" />
-                            
-                            {/* Header Section */}
-                            <Box px={6} pt={4} pb={3}>
+                            {/* Header Section - Fixed to Top */}
+                            <Box className="quotation-header-section">
+                                {/* Purple Accent Bar at Top */}
+                                <Box className="purple-accent-bar" h="8px" />
+                                
+                                {/* Header Section */}
+                                <Box px={6} pt={4} pb={3}>
                                 {/* Logo Section - Smaller */}
                                 <Flex justify="center" align="center" mb={3}>
                                     <Box>
@@ -585,10 +627,13 @@ export default function QuotationDetailPage() {
                                         <Text fontSize="xs" color="gray.600">{companyInfo.phone}</Text>
                                     </Box>
                                 </SimpleGrid>
+                                </Box>
                             </Box>
 
-                            {/* Items Table */}
-                            <Box px={6} mb={3}>
+                            {/* Content Area with padding for fixed header/footer */}
+                            <Box className="quotation-content-area">
+                                {/* Items Table */}
+                                <Box px={6} mb={3}>
                                 <Box className="quotation-table" borderRadius="md" overflow="hidden" border="1px solid" borderColor="gray.200">
                                     <Table.Root size="sm">
                                         <Table.Header>
@@ -707,29 +752,13 @@ export default function QuotationDetailPage() {
                                 </Box>
                             )}
 
-                            {/* Partners Logo - Larger Width */}
-                            <Box px={6} pb={2}>
-                                <Flex justify="center" align="center">
-                                    <img
-                                        src="/partners.png"
-                                        alt="Our Partners"
-                                        style={{
-                                            width: "100%",
-                                            maxWidth: "950px",
-                                            height: "auto",
-                                            maxHeight: "110px",
-                                            objectFit: "contain"
-                                        }}
-                                    />
-                                </Flex>
-                            </Box>
-
-                            {/* Footer Wave - Smaller */}
-                            <Box className="footer-wave" h="40px" mt="auto">
+                            {/* Footer Wave - Dark Gray/Black - Fixed to Bottom */}
+                            <Box className="footer-wave" h="40px">
                                 <svg viewBox="0 0 1200 40" preserveAspectRatio="none" style={{ width: "100%", height: "100%" }}>
-                                    <path d="M0,40 L0,20 Q300,0 600,20 T1200,15 L1200,40 Z" fill="#E5E7EB" />
-                                    <path d="M0,40 L0,30 Q400,15 800,25 L1200,23 L1200,40 Z" fill="#1F2937" />
+                                    <path d="M0,40 L0,20 Q300,0 600,20 T1200,15 L1200,40 Z" fill="#1F2937" opacity="0.9" />
+                                    <path d="M0,40 L0,30 Q400,15 800,25 L1200,23 L1200,40 Z" fill="#111827" />
                                 </svg>
+                            </Box>
                             </Box>
                         </Card.Body>
                     </Card.Root>

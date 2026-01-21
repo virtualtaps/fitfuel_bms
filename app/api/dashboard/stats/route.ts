@@ -33,13 +33,13 @@ async function getHandler(request: AuthenticatedRequest) {
         const lowStockProducts = products.filter(p => p.status === 'Low Stock' || p.status === 'Out of Stock');
 
         const stats: DashboardStats = {
-            totalRevenue: `$${totalRevenue.toLocaleString()}`,
+            totalRevenue: `QAR ${totalRevenue.toLocaleString()}`,
             totalInvoices: invoices.length,
             totalQuotations: totalQuotations,
             totalInventoryItems: products.length,
-            paidAmount: `$${paidAmount.toLocaleString()}`,
-            pendingAmount: `$${pendingAmount.toLocaleString()}`,
-            overdueAmount: `$${overdueAmount.toLocaleString()}`,
+            paidAmount: `QAR ${paidAmount.toLocaleString()}`,
+            pendingAmount: `QAR ${pendingAmount.toLocaleString()}`,
+            overdueAmount: `QAR ${overdueAmount.toLocaleString()}`,
             lowStockCount: lowStockProducts.length,
         };
 
