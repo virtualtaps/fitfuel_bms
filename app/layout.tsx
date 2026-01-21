@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BMS - Business Management System",
-  description: "Manage your invoices, quotations, and inventory with ease",
+  title: "FitFuel",
+  description: "Fuel Yourself to be Fit",
 };
 
 export default function RootLayout({
