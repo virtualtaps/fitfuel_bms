@@ -25,7 +25,6 @@ import {
     LuPlus,
     LuSearch,
     LuPackage,
-    LuDownload,
     LuEye,
     LuPencil,
     LuTrash2,
@@ -64,7 +63,6 @@ export default function InventoryPage() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<ProductResponse | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         fetchCategories();
@@ -135,24 +133,6 @@ export default function InventoryPage() {
 
     const lowStockCount = products.filter(p => p.status === "Low Stock" || p.status === "Out of Stock").length;
 
-    const handleExport = async () => {
-        setIsExporting(true);
-        toaster.create({
-            title: "Exporting inventory...",
-            type: "loading",
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        setIsExporting(false);
-        toaster.dismiss();
-        toaster.create({
-            title: "Export complete",
-            description: "Your inventory data has been downloaded.",
-            type: "success",
-        });
-    };
-
     const openDeleteDialog = (product: typeof products[0]) => {
         setProductToDelete(product);
         setDeleteDialogOpen(true);
@@ -207,15 +187,6 @@ export default function InventoryPage() {
                         </Text>
                     </Box>
                     <HStack gap={2} flexWrap="wrap">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleExport}
-                            loading={isExporting}
-                            loadingText="Exporting..."
-                        >
-                            <LuDownload /> <Text display={{ base: "none", sm: "inline" }}>Export</Text>
-                        </Button>
                         <Link href="/dashboard/inventory/create">
                             <Button colorPalette="orange" size="sm">
                                 <LuPlus /> <Text display={{ base: "none", sm: "inline" }}>Add Product</Text>
@@ -224,7 +195,7 @@ export default function InventoryPage() {
                     </HStack>
                 </Flex>
 
-                {/* Low Stock Alert */}
+                
                 {lowStockCount > 0 && (
                     <Card.Root
                         bg="orange.50"
