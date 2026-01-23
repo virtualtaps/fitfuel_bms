@@ -244,6 +244,15 @@ export default function SettingsPage() {
     };
 
     const handleUpdatePassword = async () => {
+        if (!currentPassword) {
+            toaster.create({
+                title: "Current password required",
+                description: "Please enter your current password",
+                type: "error",
+            });
+            return;
+        }
+
         if (!newPassword || newPassword.length < 6) {
             toaster.create({
                 title: "Invalid password",
@@ -270,25 +279,31 @@ export default function SettingsPage() {
         });
 
         try {
-            // TODO: Implement actual password update API
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            toaster.dismiss("updating-password");
-            toaster.create({
-                title: "Password updated!",
-                description: "Your password has been changed successfully",
-                type: "success",
+            const response = await apiClient.put("/api/settings/password", {
+                currentPassword,
+                newPassword,
             });
 
-            // Clear password fields
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
+            if (response.success) {
+                toaster.dismiss("updating-password");
+                toaster.create({
+                    title: "Password updated!",
+                    description: "Your password has been changed successfully",
+                    type: "success",
+                });
+
+                // Clear password fields
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+            } else {
+                throw new Error(response.error || "Failed to update password");
+            }
         } catch (error) {
             toaster.dismiss("updating-password");
             toaster.create({
                 title: "Error",
-                description: "Failed to update password",
+                description: error instanceof Error ? error.message : "Failed to update password",
                 type: "error",
             });
         } finally {
