@@ -28,7 +28,6 @@ import {
     LuSettings,
     LuLogOut,
     LuChevronDown,
-    LuUser,
     LuMenu,
     LuUsers,
     LuX,
@@ -363,15 +362,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             <Portal>
                                 <Menu.Positioner>
                                     <Menu.Content minW="180px" bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100">
-                                        <Menu.Item value="profile" borderRadius="lg">
-                                            <LuUser />
-                                            <Box flex="1">Profile</Box>
-                                        </Menu.Item>
-                                        <Menu.Item value="settings" borderRadius="lg">
-                                            <LuSettings />
-                                            <Box flex="1">Settings</Box>
-                                        </Menu.Item>
-                                        <Menu.Separator />
                                         <Menu.Item
                                             value="logout"
                                             color="red.500"
