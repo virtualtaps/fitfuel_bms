@@ -585,7 +585,7 @@ export default function InvoiceDetailPage() {
                                         <div style={{ fontWeight: 800, fontSize: "17px", color: "#111", marginBottom: "4px" }}>Thank you !</div>
                                         <div style={{ fontWeight: 800, fontSize: "17px", color: "#111", marginBottom: "8px" }}>! شكراً</div>
                                         {invoice.paymentMethod && (
-                                            <div style={{ fontWeight: 600, fontSize: "14px", color: "#444" }}>{invoice.paymentMethod}</div>
+                                            <div style={{ fontWeight: 600, fontSize: "14px", color: "#444" }}>Payment Method: {invoice.paymentMethod}</div>
                                         )}
                                     </div>
 
