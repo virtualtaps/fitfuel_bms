@@ -21,6 +21,7 @@ async function postHandler(request: AuthenticatedRequest, context?: { params: Pr
             clientPhone: originalInvoice.clientPhone,
             items: originalInvoice.items,
             subtotal: originalInvoice.subtotal,
+            discountPercentage: originalInvoice.discountPercentage ?? 0,
             discount: originalInvoice.discount,
             total: originalInvoice.total,
             status: 'Draft',

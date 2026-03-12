@@ -56,6 +56,7 @@ export default function EditProductPage() {
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [filteredCategories, setFilteredCategories] = useState<CategoryResponse[]>([]);
     const [sellingPrice, setSellingPrice] = useState("");
+    const [buyingPrice, setBuyingPrice] = useState("");
     const [initialStock, setInitialStock] = useState("");
     const [minStock, setMinStock] = useState("");
     const [location, setLocation] = useState("");
@@ -121,6 +122,7 @@ export default function EditProductPage() {
                 setSku(product.sku || "");
                 setCategory(product.category || "");
                 setSellingPrice(product.sellingPrice.toString());
+                setBuyingPrice(product.buyingPrice !== undefined ? product.buyingPrice.toString() : "");
                 setInitialStock(product.stock.toString());
                 setMinStock(product.minStock?.toString() || "");
                 setLocation(product.location || "");
@@ -191,6 +193,7 @@ export default function EditProductPage() {
                 stock: parseInt(initialStock) || 0,
                 minStock: parseInt(minStock) || undefined,
                 sellingPrice: parseFloat(sellingPrice) || 0,
+                buyingPrice: parseFloat(buyingPrice) || undefined,
                 location: location || undefined,
                 supplierName: supplierName || undefined,
                 supplierContact: supplierContact || undefined,
@@ -469,6 +472,16 @@ export default function EditProductPage() {
                                                 size="sm"
                                                 value={sellingPrice}
                                                 onChange={(e) => setSellingPrice(e.target.value)}
+                                            />
+                                        </Field.Root>
+                                        <Field.Root>
+                                            <Field.Label fontSize="sm">Buying Price</Field.Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                size="sm"
+                                                value={buyingPrice}
+                                                onChange={(e) => setBuyingPrice(e.target.value)}
                                             />
                                         </Field.Root>
                                     </SimpleGrid>

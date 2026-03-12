@@ -10,6 +10,7 @@ export interface InvoiceDocument {
     clientPhone?: string;
     items: InvoiceItem[];
     subtotal: number;
+    discountPercentage: number;
     discount: number;
     total: number;
     status: InvoiceStatus;
@@ -32,6 +33,7 @@ export interface InvoiceResponse {
     clientPhone?: string;
     items: InvoiceItem[];
     subtotal: number;
+    discountPercentage: number;
     discount: number;
     total: number;
     issueDate: Date;
@@ -52,6 +54,7 @@ export function invoiceToResponse(invoice: InvoiceDocument): InvoiceResponse {
         clientPhone: invoice.clientPhone,
         items: invoice.items,
         subtotal: invoice.subtotal,
+        discountPercentage: invoice.discountPercentage ?? 0,
         discount: invoice.discount,
         total: invoice.total,
         issueDate: invoice.issueDate,

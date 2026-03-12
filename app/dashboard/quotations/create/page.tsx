@@ -63,7 +63,7 @@ export default function CreateQuotationPage() {
     const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
     const [validUntil, setValidUntil] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     const [notes, setNotes] = useState("");
-    const [discountAmount, setDiscountAmount] = useState<number | null>(null);
+    const [discountPercentage, setDiscountPercentage] = useState<number | null>(null);
     const [isDiscountEditing, setIsDiscountEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -233,13 +233,14 @@ export default function CreateQuotationPage() {
         .filter(item => item.isReturn)
         .reduce((sum, item) => sum + (item.quantity * item.rate), 0);
     const netSubtotal = subtotal - returns;
-    const discount = discountAmount !== null ? discountAmount : 0;
-    const total = netSubtotal - discount;
+    const discountPct = discountPercentage !== null ? discountPercentage : 0;
+    const discountAmount = netSubtotal * discountPct / 100;
+    const total = netSubtotal - discountAmount;
 
     // Check if there are unsaved changes
     const hasUnsavedChanges = items.some(item =>
         item.description || item.quantity > 0 || item.rate > 0
-    ) || clientName || clientPhone || notes || discountAmount !== null;
+    ) || clientName || clientPhone || notes || discountPercentage !== null;
 
     // No stock validation for quotations - quotations don't affect inventory
     const validateStockQuantities = (): { valid: boolean; error?: string } => {
@@ -327,7 +328,7 @@ export default function CreateQuotationPage() {
                 clientPhone: clientPhone || undefined,
                 clientId: finalClientId,
                 items: quotationItems,
-                discount: discount,
+                discountPercentage: discountPct,
                 issueDate: issueDate,
                 validUntil: validUntil,
                 notes: notes || undefined,
@@ -433,7 +434,7 @@ export default function CreateQuotationPage() {
                 clientPhone: clientPhone || undefined,
                 clientId: finalClientId,
                 items: quotationItems,
-                discount: discount,
+                discountPercentage: discountPct,
                 issueDate: issueDate,
                 validUntil: validUntil,
                 notes: notes || undefined,
@@ -694,8 +695,8 @@ export default function CreateQuotationPage() {
                                                                         setShowProductDropdown({ ...showProductDropdown, [item.id]: false });
                                                                     }, 200);
                                                                 }}
-                                                                borderColor={item.isReturn ? "red.300" : undefined}
-                                                                bg={item.isReturn ? "red.50" : undefined}
+                                                                borderColor={item.isReturn ? "red.500/30" : undefined}
+                                                                bg={item.isReturn ? "red.500/10" : undefined}
                                                             />
                                                             {showProductDropdown[item.id] && (
                                                                 <Box
@@ -779,14 +780,14 @@ export default function CreateQuotationPage() {
                                                                         : !item.isReturn && item.productStock !== undefined && item.quantity > item.productStock
                                                                             ? "red.500"
                                                                             : item.isReturn
-                                                                                ? "red.300"
+                                                                                ? "red.500/30"
                                                                                 : undefined
                                                                 }
                                                                 bg={
                                                                     item.quantity === 0
-                                                                        ? "red.50"
+                                                                        ? "red.500/10"
                                                                         : !item.isReturn && item.productStock !== undefined && item.quantity > item.productStock
-                                                                            ? "red.50"
+                                                                            ? "red.500/10"
                                                                             : item.isReturn
                                                                                 ? "red.50"
                                                                                 : undefined
@@ -816,8 +817,8 @@ export default function CreateQuotationPage() {
                                                                     }
                                                                 }
                                                             }}
-                                                            borderColor={item.isReturn ? "red.300" : undefined}
-                                                            bg={item.isReturn ? "red.50" : undefined}
+                                                            borderColor={item.isReturn ? "red.500/30" : undefined}
+                                                            bg={item.isReturn ? "red.500/10" : undefined}
                                                         />
                                                     </Box>
                                                     <Box w={{ base: "100px", md: "100px" }} flexShrink={0}>
@@ -862,8 +863,8 @@ export default function CreateQuotationPage() {
                                             <Card.Root
                                                 key={item.id}
                                                 variant="outline"
-                                                bg={item.isReturn ? "red.50" : "gray.50"}
-                                                borderColor={item.isReturn ? "red.200" : undefined}
+                                                bg={item.isReturn ? "red.500/10" : "bg.subtle"}
+                                                borderColor={item.isReturn ? "red.500/30" : undefined}
                                             >
                                                 <Card.Body p={4}>
                                                     <VStack gap={3} align="stretch">
@@ -890,7 +891,7 @@ export default function CreateQuotationPage() {
                                                                             setShowProductDropdown({ ...showProductDropdown, [item.id]: false });
                                                                         }, 200);
                                                                     }}
-                                                                    borderColor={item.isReturn ? "red.300" : undefined}
+                                                                    borderColor={item.isReturn ? "red.500/30" : undefined}
                                                                 />
                                                                 {showProductDropdown[item.id] && filteredProducts(item.id).length > 0 && (
                                                                     <Box
@@ -965,14 +966,14 @@ export default function CreateQuotationPage() {
                                                                                 : !item.isReturn && item.productStock !== undefined && item.quantity > item.productStock
                                                                                     ? "red.500"
                                                                                     : item.isReturn
-                                                                                        ? "red.300"
+                                                                                        ? "red.500/30"
                                                                                         : undefined
                                                                         }
                                                                         bg={
                                                                             item.quantity === 0
-                                                                                ? "red.50"
+                                                                                ? "red.500/10"
                                                                                 : !item.isReturn && item.productStock !== undefined && item.quantity > item.productStock
-                                                                                    ? "red.50"
+                                                                                    ? "red.500/10"
                                                                                     : undefined
                                                                         }
                                                                     />
@@ -1000,7 +1001,7 @@ export default function CreateQuotationPage() {
                                                                             }
                                                                         }
                                                                     }}
-                                                                    borderColor={item.isReturn ? "red.300" : undefined}
+                                                                    borderColor={item.isReturn ? "red.500/30" : undefined}
                                                                 />
                                                             </Field.Root>
                                                         </SimpleGrid>
@@ -1085,13 +1086,13 @@ export default function CreateQuotationPage() {
                                     <HStack justify="space-between" align="center">
                                         <HStack gap={2} align="center">
                                             <Text color="fg.muted" fontSize="sm">Discount</Text>
-                                            {discountAmount !== null && discountAmount > 0 && (
+                                            {discountPercentage !== null && discountPercentage > 0 && (
                                                 <IconButton
                                                     variant="ghost"
                                                     size="xs"
                                                     aria-label="Reset discount"
                                                     onClick={() => {
-                                                        setDiscountAmount(null);
+                                                        setDiscountPercentage(null);
                                                         setIsDiscountEditing(false);
                                                     }}
                                                     title="Remove discount"
@@ -1102,42 +1103,51 @@ export default function CreateQuotationPage() {
                                         </HStack>
                                         {isDiscountEditing ? (
                                             <HStack gap={1} align="center">
-                                                <Text fontSize="xs" color="fg.muted">QAR</Text>
                                                 <Input
                                                     type="number"
                                                     size="xs"
-                                                    w="80px"
-                                                    value={discountAmount !== null ? discountAmount : 0}
+                                                    w="70px"
+                                                    value={discountPercentage !== null ? discountPercentage : ''}
                                                     onChange={(e) => {
-                                                        const value = parseFloat(e.target.value) || 0;
-                                                        setDiscountAmount(value);
+                                                        const value = e.target.value;
+                                                        if (value === '') {
+                                                            setDiscountPercentage(null);
+                                                        } else {
+                                                            const num = parseFloat(value);
+                                                            if (!isNaN(num)) setDiscountPercentage(Math.min(100, Math.max(0, num)));
+                                                        }
                                                     }}
                                                     onBlur={() => setIsDiscountEditing(false)}
                                                     onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            setIsDiscountEditing(false);
-                                                        }
+                                                        if (e.key === 'Enter') setIsDiscountEditing(false);
                                                         if (e.key === 'Escape') {
-                                                            setDiscountAmount(null);
+                                                            setDiscountPercentage(null);
                                                             setIsDiscountEditing(false);
                                                         }
                                                     }}
                                                     autoFocus
                                                     min="0"
+                                                    max="100"
                                                     step="0.01"
                                                 />
+                                                <Text fontSize="xs" color="fg.muted">%</Text>
                                             </HStack>
                                         ) : (
-                                            <Text
-                                                fontWeight="medium"
-                                                color={discount > 0 ? "green.600" : undefined}
-                                                cursor="pointer"
-                                                _hover={{ color: "purple.600", textDecoration: "underline" }}
-                                                onClick={() => setIsDiscountEditing(true)}
-                                                title="Click to edit discount amount"
-                                            >
-                                                {discount > 0 ? "-" : ""}QAR {discount.toLocaleString()}
-                                            </Text>
+                                            <Box textAlign="right">
+                                                <Text
+                                                    fontWeight="medium"
+                                                    color={discountAmount > 0 ? "purple.600" : undefined}
+                                                    cursor="pointer"
+                                                    _hover={{ color: "purple.500", textDecoration: "underline" }}
+                                                    onClick={() => setIsDiscountEditing(true)}
+                                                    title="Click to edit discount percentage"
+                                                >
+                                                    {discountPct > 0 ? "-" : ""}{discountPct}%
+                                                </Text>
+                                                {discountAmount > 0 && (
+                                                    <Text fontSize="xs" color="fg.muted">QAR {discountAmount.toLocaleString()}</Text>
+                                                )}
+                                            </Box>
                                         )}
                                     </HStack>
                                     <Separator />

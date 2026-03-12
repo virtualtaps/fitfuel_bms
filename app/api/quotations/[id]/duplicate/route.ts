@@ -21,6 +21,7 @@ async function postHandler(request: AuthenticatedRequest, context?: { params: Pr
             clientPhone: originalQuotation.clientPhone,
             items: originalQuotation.items,
             subtotal: originalQuotation.subtotal,
+            discountPercentage: originalQuotation.discountPercentage ?? 0,
             discount: originalQuotation.discount,
             total: originalQuotation.total,
             status: 'Draft',

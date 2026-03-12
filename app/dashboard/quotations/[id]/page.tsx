@@ -704,6 +704,12 @@ export default function QuotationDetailPage() {
                                         <Flex justify="flex-end">
                                             <Box w="240px" bg="bg.subtle" borderRadius="md" p={2.5}>
                                                 <VStack gap={1.5} align="stretch">
+                                                    {quotation.discount > 0 && (
+                                                        <HStack justify="space-between">
+                                                            <Text color="fg.muted" fontSize="sm">Discount{quotation.discountPercentage > 0 ? ` (${quotation.discountPercentage}%)` : ''}</Text>
+                                                            <Text color="red.500" fontSize="sm" fontWeight="semibold">- QAR {quotation.discount.toLocaleString()}</Text>
+                                                        </HStack>
+                                                    )}
                                                     <HStack justify="space-between">
                                                         <Text fontWeight="bold" color="fg.default" fontSize="sm">TOTAL</Text>
                                                         <Box textAlign="right">

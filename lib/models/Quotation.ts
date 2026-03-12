@@ -10,6 +10,7 @@ export interface QuotationDocument {
     clientPhone?: string;
     items: QuotationItem[];
     subtotal: number;
+    discountPercentage: number;
     discount: number;
     total: number;
     // status field is tracked similarly to invoices so history and filters work correctly
@@ -33,6 +34,7 @@ export interface QuotationResponse {
     clientPhone?: string;
     items: QuotationItem[];
     subtotal: number;
+    discountPercentage: number;
     discount: number;
     total: number;
     issueDate: Date;
@@ -52,6 +54,7 @@ export function quotationToResponse(quotation: QuotationDocument): QuotationResp
         clientPhone: quotation.clientPhone,
         items: quotation.items,
         subtotal: quotation.subtotal,
+        discountPercentage: quotation.discountPercentage ?? 0,
         discount: quotation.discount,
         total: quotation.total,
         issueDate: quotation.issueDate,

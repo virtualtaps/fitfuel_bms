@@ -11,6 +11,7 @@ export interface ProductDocument {
     category?: string;
     stock: number;
     minStock?: number;
+    buyingPrice?: number;
     sellingPrice: number;
     location?: string;
     supplierName?: string;
@@ -30,6 +31,7 @@ export interface ProductResponse {
     category: string;
     stock: number;
     minStock?: number;
+    buyingPrice?: number;
     sellingPrice: number;
     location?: string;
     supplierName?: string;
@@ -55,6 +57,7 @@ export function productToResponse(product: ProductDocument): ProductResponse {
         category: product.category || '',
         stock: product.stock,
         minStock: product.minStock,
+        buyingPrice: product.buyingPrice ?? 0,
         sellingPrice: product.sellingPrice,
         location: product.location,
         supplierName: product.supplierName,

@@ -53,10 +53,13 @@ async function putHandler(request: AuthenticatedRequest, context?: { params: Pro
                 amount: item.quantity * item.rate,
             }));
             const subtotal = items.reduce((sum: number, item: any) => sum + item.amount, 0);
-            const discount = validatedData.discount !== undefined ? validatedData.discount : quotation.discount;
+            const discountPercentage = validatedData.discountPercentage !== undefined ? validatedData.discountPercentage : (quotation.discountPercentage ?? 0);
+            const discount = subtotal > 0 ? subtotal * discountPercentage / 100 : 0;
             const total = subtotal - discount;
             updates.items = items;
             updates.subtotal = subtotal;
+            updates.discountPercentage = discountPercentage;
+            updates.discount = discount;
             updates.total = total;
         }
 

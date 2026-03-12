@@ -547,7 +547,7 @@ export default function InvoiceDetailPage() {
                                         {invoice.discount > 0 && (
                                             <>
                                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                                                    <span style={{ fontSize: "14px", color: "#555" }}>Discount</span>
+                                                    <span style={{ fontSize: "14px", color: "#555" }}>Discount{invoice.discountPercentage > 0 ? ` (${invoice.discountPercentage}%)` : ''}</span>
                                                     <span style={{ fontWeight: 700, fontSize: "14px", color: "#c0392b" }}>
                                                         - QAR {invoice.discount.toLocaleString()}
                                                     </span>

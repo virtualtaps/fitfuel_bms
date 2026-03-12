@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest } from '@/lib/middleware';
 import { findInvoiceById, updateInvoice, deleteInvoice, invoiceToResponse } from '@/lib/models/Invoice';
+import { findProductById } from '@/lib/models/Product';
 import { invoiceSchema } from '@/lib/validation';
 import { handleError, NotFoundError } from '@/lib/errors';
 
@@ -48,21 +49,33 @@ async function putHandler(request: AuthenticatedRequest, context?: { params: Pro
         // Recalculate amounts if items are updated
         let updates: any = { ...validatedData };
         if (validatedData.items) {
-            const items = validatedData.items.map((item: any) => ({
-                ...item,
-                amount: item.quantity * item.rate,
+            const items = await Promise.all(validatedData.items.map(async (item: any) => {
+                let buyingPrice = item.buyingPrice ?? 0;
+                if (item.productId && !item.buyingPrice) {
+                    const product = await findProductById(item.productId);
+                    buyingPrice = product?.buyingPrice ?? 0;
+                }
+                return {
+                    ...item,
+                    amount: item.quantity * item.rate,
+                    buyingPrice,
+                };
             }));
             const subtotal = items.reduce((sum: number, item: any) => sum + item.amount, 0);
-            const discount = validatedData.discount ?? invoice.discount;
+            const discountPercentage = validatedData.discountPercentage ?? invoice.discountPercentage ?? 0;
+            const discount = subtotal > 0 ? subtotal * discountPercentage / 100 : 0;
             const total = subtotal - discount;
             updates.items = items;
             updates.subtotal = subtotal;
+            updates.discountPercentage = discountPercentage;
             updates.discount = discount;
             updates.total = total;
-        } else if (validatedData.discount !== undefined) {
-            // If only discount is updated, recalculate total
-            const discount = validatedData.discount;
+        } else if (validatedData.discountPercentage !== undefined) {
+            // If only discount percentage is updated, recalculate total
+            const discountPercentage = validatedData.discountPercentage;
+            const discount = invoice.subtotal > 0 ? invoice.subtotal * discountPercentage / 100 : 0;
             const total = invoice.subtotal - discount;
+            updates.discountPercentage = discountPercentage;
             updates.discount = discount;
             updates.total = total;
         }

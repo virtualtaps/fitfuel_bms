@@ -9,8 +9,9 @@ export type PnLPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 interface PeriodBucket {
     label: string;
     revenue: number;
-    expenses: number;
-    net: number;
+    cogs: number;       // cost of goods sold
+    expenses: number;   // salary expenses
+    net: number;        // revenue - cogs - expenses
     invoiceCount: number;
 }
 
@@ -18,7 +19,9 @@ interface PnLResponse {
     period: PnLPeriod;
     summary: {
         totalRevenue: number;
+        totalCogs: number;
         totalExpenses: number;
+        grossProfit: number;
         netProfit: number;
         invoiceCount: number;
         profitMargin: number; // percentage
@@ -36,6 +39,14 @@ function endOfDay(d: Date) {
 
 function getMonthName(m: number) {
     return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m];
+}
+
+function calcCogs(invoices: any[]): number {
+    return invoices.reduce((sum, inv) => {
+        const itemCogs = (inv.items || []).reduce((s: number, item: any) =>
+            s + (item.buyingPrice ?? 0) * Math.abs(item.quantity), 0);
+        return sum + itemCogs;
+    }, 0);
 }
 
 async function getHandler(request: AuthenticatedRequest) {
@@ -69,8 +80,9 @@ async function getHandler(request: AuthenticatedRequest) {
                 ]);
 
                 const revenue = invoices.reduce((s, inv) => s + inv.total, 0);
+                const cogs = calcCogs(invoices);
                 const expenses = salaries.reduce((s, p) => s + p.amount, 0);
-                breakdown.push({ label, revenue, expenses, net: revenue - expenses, invoiceCount: invoices.length });
+                breakdown.push({ label, revenue, cogs, expenses, net: revenue - cogs - expenses, invoiceCount: invoices.length });
             }
         } else if (period === 'weekly') {
             // Last 12 weeks
@@ -90,8 +102,9 @@ async function getHandler(request: AuthenticatedRequest) {
                 ]);
 
                 const revenue = invoices.reduce((s, inv) => s + inv.total, 0);
+                const cogs = calcCogs(invoices);
                 const expenses = salaries.reduce((s, p) => s + p.amount, 0);
-                breakdown.push({ label: weekLabel, revenue, expenses, net: revenue - expenses, invoiceCount: invoices.length });
+                breakdown.push({ label: weekLabel, revenue, cogs, expenses, net: revenue - cogs - expenses, invoiceCount: invoices.length });
             }
         } else if (period === 'monthly') {
             // Last 12 months
@@ -111,8 +124,9 @@ async function getHandler(request: AuthenticatedRequest) {
                 ]);
 
                 const revenue = invoices.reduce((s, inv) => s + inv.total, 0);
+                const cogs = calcCogs(invoices);
                 const expenses = salaries.reduce((s, p) => s + p.amount, 0);
-                breakdown.push({ label, revenue, expenses, net: revenue - expenses, invoiceCount: invoices.length });
+                breakdown.push({ label, revenue, cogs, expenses, net: revenue - cogs - expenses, invoiceCount: invoices.length });
             }
         } else if (period === 'yearly') {
             // Last 5 years
@@ -127,15 +141,18 @@ async function getHandler(request: AuthenticatedRequest) {
                 ]);
 
                 const revenue = invoices.reduce((s, inv) => s + inv.total, 0);
+                const cogs = calcCogs(invoices);
                 const expenses = salaries.reduce((s, p) => s + p.amount, 0);
-                breakdown.push({ label: `${year}`, revenue, expenses, net: revenue - expenses, invoiceCount: invoices.length });
+                breakdown.push({ label: `${year}`, revenue, cogs, expenses, net: revenue - cogs - expenses, invoiceCount: invoices.length });
             }
         }
 
-        // Summary = last bucket (current period) totals across all buckets summed
+        // Summary totals across all buckets
         const totalRevenue = breakdown.reduce((s, b) => s + b.revenue, 0);
+        const totalCogs = breakdown.reduce((s, b) => s + b.cogs, 0);
         const totalExpenses = breakdown.reduce((s, b) => s + b.expenses, 0);
-        const netProfit = totalRevenue - totalExpenses;
+        const grossProfit = totalRevenue - totalCogs;
+        const netProfit = grossProfit - totalExpenses;
         const totalInvoices = breakdown.reduce((s, b) => s + b.invoiceCount, 0);
         const profitMargin = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0;
 
@@ -143,7 +160,9 @@ async function getHandler(request: AuthenticatedRequest) {
             period,
             summary: {
                 totalRevenue,
+                totalCogs,
                 totalExpenses,
+                grossProfit,
                 netProfit,
                 invoiceCount: totalInvoices,
                 profitMargin,

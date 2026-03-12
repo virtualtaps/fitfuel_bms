@@ -17,11 +17,11 @@ interface InvoiceSummaryProps {
     subtotal: number;
     returns: number;
     netSubtotal: number;
-    discount: number;
-    discountAmount: number | null;
+    discountPercentage: number | null;
+    discountAmount: number;
     total: number;
     isDiscountEditing: boolean;
-    onDiscountAmountChange: (value: number | null) => void;
+    onDiscountPercentageChange: (value: number | null) => void;
     onDiscountEditToggle: () => void;
     onDiscountReset: () => void;
 }
@@ -30,11 +30,11 @@ export default function InvoiceSummary({
     subtotal,
     returns,
     netSubtotal,
-    discount,
+    discountPercentage,
     discountAmount,
     total,
     isDiscountEditing,
-    onDiscountAmountChange,
+    onDiscountPercentageChange,
     onDiscountEditToggle,
     onDiscountReset,
 }: InvoiceSummaryProps) {
@@ -63,17 +63,17 @@ export default function InvoiceSummary({
                     )}
                     <Box
                         border="2px solid"
-                        borderColor={discount > 0 ? "blue.300" : "gray.200"}
+                        borderColor={discountAmount > 0 ? "blue.500/30" : "border.emphasized"}
                         borderRadius="md"
                         p={3}
-                        bg={discount > 0 ? "blue.50" : "gray.50"}
+                        bg={discountAmount > 0 ? "blue.500/10" : "bg.subtle"}
                     >
                         <HStack justify="space-between" align="center">
                             <HStack gap={2} align="center">
                                 <Text color="fg.muted" fontSize="sm" fontWeight="semibold">
                                     Discount
                                 </Text>
-                                {discountAmount !== null && discountAmount > 0 && (
+                                {discountPercentage !== null && discountPercentage > 0 && (
                                     <IconButton
                                         variant="ghost"
                                         size="xs"
@@ -87,20 +87,19 @@ export default function InvoiceSummary({
                             </HStack>
                             {isDiscountEditing ? (
                                 <HStack gap={1} align="center">
-                                    <Text fontSize="sm" color="fg.muted" fontWeight="medium">QAR </Text>
                                     <Input
                                         type="number"
                                         size="sm"
-                                        w="100px"
-                                        value={discountAmount !== null ? discountAmount : ''}
+                                        w="80px"
+                                        value={discountPercentage !== null ? discountPercentage : ''}
                                         onChange={(e) => {
                                             const value = e.target.value;
                                             if (value === '') {
-                                                onDiscountAmountChange(null);
+                                                onDiscountPercentageChange(null);
                                             } else {
                                                 const numValue = parseFloat(value);
                                                 if (!isNaN(numValue)) {
-                                                    onDiscountAmountChange(numValue);
+                                                    onDiscountPercentageChange(Math.min(100, Math.max(0, numValue)));
                                                 }
                                             }
                                         }}
@@ -110,27 +109,34 @@ export default function InvoiceSummary({
                                                 onDiscountEditToggle();
                                             }
                                             if (e.key === 'Escape') {
-                                                onDiscountAmountChange(null);
+                                                onDiscountPercentageChange(null);
                                                 onDiscountEditToggle();
                                             }
                                         }}
                                         autoFocus
                                         min="0"
+                                        max="100"
                                         step="0.01"
                                     />
+                                    <Text fontSize="sm" color="fg.muted" fontWeight="medium">%</Text>
                                 </HStack>
                             ) : (
-                                <Text
-                                    fontWeight="bold"
-                                    fontSize="md"
-                                    cursor="pointer"
-                                    color={discount > 0 ? "blue.600" : "gray.600"}
-                                    _hover={{ color: "blue.700", textDecoration: "underline" }}
-                                    onClick={onDiscountEditToggle}
-                                    title="Click to edit discount amount"
-                                >
-                                    QAR {discount.toLocaleString()}
-                                </Text>
+                                <Box textAlign="right">
+                                    <Text
+                                        fontWeight="bold"
+                                        fontSize="md"
+                                        cursor="pointer"
+                                        color={discountAmount > 0 ? "blue.600" : "fg.muted"}
+                                        _hover={{ color: "blue.500", textDecoration: "underline" }}
+                                        onClick={onDiscountEditToggle}
+                                        title="Click to edit discount percentage"
+                                    >
+                                        {discountPercentage !== null ? discountPercentage : 0}%
+                                    </Text>
+                                    {discountAmount > 0 && (
+                                        <Text fontSize="xs" color="fg.muted">QAR {discountAmount.toLocaleString()}</Text>
+                                    )}
+                                </Box>
                             )}
                         </HStack>
                     </Box>

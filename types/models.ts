@@ -12,6 +12,7 @@ export interface InvoiceItem {
     rate: number;
     amount: number;
     productId?: string; // Reference to product in inventory
+    buyingPrice?: number; // Cost at time of sale for COGS tracking
 }
 
 export interface QuotationItem {
@@ -20,5 +21,6 @@ export interface QuotationItem {
     rate: number;
     amount: number;
     productId?: string; // Reference to product in inventory
+    buyingPrice?: number; // Cost at time of quotation
 }
 

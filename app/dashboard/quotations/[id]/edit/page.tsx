@@ -83,7 +83,7 @@ export default function EditQuotationPage() {
     ]);
 
     // Discount state
-    const [discountAmount, setDiscountAmount] = useState<number | null>(null);
+    const [discountPercentage, setDiscountPercentage] = useState<number | null>(null);
     const [isDiscountEditing, setIsDiscountEditing] = useState(false);
 
     // Product search state
@@ -100,8 +100,9 @@ export default function EditQuotationPage() {
 
     // Calculated values
     const subtotal = items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
-    const discount = discountAmount !== null ? discountAmount : 0;
-    const total = subtotal - discount;
+    const discountPct = discountPercentage !== null ? discountPercentage : 0;
+    const discountAmount = subtotal * discountPct / 100;
+    const total = subtotal - discountAmount;
 
     useEffect(() => {
         if (quotationId) fetchQuotation();
@@ -185,7 +186,7 @@ export default function EditQuotationPage() {
                 const queries: { [key: number]: string } = {};
                 loadedItems.forEach(item => { queries[item.id] = item.description; });
                 setProductSearchQueries(queries);
-                setDiscountAmount(q.discount > 0 ? q.discount : null);
+                setDiscountPercentage(q.discountPercentage > 0 ? q.discountPercentage : null);
             } else {
                 throw new Error(response.error || "Failed to load quotation");
             }
@@ -211,7 +212,7 @@ export default function EditQuotationPage() {
             amount: item.quantity * item.rate,
             productId: item.productId,
         })),
-        discount: discount,
+        discountPercentage: discountPct,
         issueDate: issueDate,
         validUntil: validUntil,
         notes: notes.trim() || undefined,
@@ -738,13 +739,13 @@ export default function EditQuotationPage() {
                                     <HStack justify="space-between" align="center">
                                         <HStack gap={2} align="center">
                                             <Text color="fg.muted" fontSize="sm">Discount</Text>
-                                            {discountAmount !== null && discountAmount > 0 && (
+                                            {discountPercentage !== null && discountPercentage > 0 && (
                                                 <IconButton
                                                     variant="ghost"
                                                     size="xs"
                                                     aria-label="Reset discount"
                                                     onClick={() => {
-                                                        setDiscountAmount(null);
+                                                        setDiscountPercentage(null);
                                                         setIsDiscountEditing(false);
                                                     }}
                                                     title="Remove discount"
@@ -755,37 +756,51 @@ export default function EditQuotationPage() {
                                         </HStack>
                                         {isDiscountEditing ? (
                                             <HStack gap={1} align="center">
-                                                <Text fontSize="xs" color="fg.muted">QAR</Text>
                                                 <Input
                                                     type="number"
                                                     size="xs"
-                                                    w="80px"
-                                                    value={discountAmount !== null ? discountAmount : 0}
-                                                    onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                                                    w="70px"
+                                                    value={discountPercentage !== null ? discountPercentage : ''}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        if (value === '') {
+                                                            setDiscountPercentage(null);
+                                                        } else {
+                                                            const num = parseFloat(value);
+                                                            if (!isNaN(num)) setDiscountPercentage(Math.min(100, Math.max(0, num)));
+                                                        }
+                                                    }}
                                                     onBlur={() => setIsDiscountEditing(false)}
                                                     onKeyDown={(e) => {
                                                         if (e.key === "Enter") setIsDiscountEditing(false);
                                                         if (e.key === "Escape") {
-                                                            setDiscountAmount(null);
+                                                            setDiscountPercentage(null);
                                                             setIsDiscountEditing(false);
                                                         }
                                                     }}
                                                     autoFocus
                                                     min="0"
+                                                    max="100"
                                                     step="0.01"
                                                 />
+                                                <Text fontSize="xs" color="fg.muted">%</Text>
                                             </HStack>
                                         ) : (
-                                            <Text
-                                                fontWeight="medium"
-                                                color={discount > 0 ? "green.600" : undefined}
-                                                cursor="pointer"
-                                                _hover={{ color: "purple.600", textDecoration: "underline" }}
-                                                onClick={() => setIsDiscountEditing(true)}
-                                                title="Click to edit discount amount"
-                                            >
-                                                {discount > 0 ? "-" : ""}QAR {discount.toLocaleString()}
-                                            </Text>
+                                            <Box textAlign="right">
+                                                <Text
+                                                    fontWeight="medium"
+                                                    color={discountAmount > 0 ? "purple.600" : undefined}
+                                                    cursor="pointer"
+                                                    _hover={{ color: "purple.500", textDecoration: "underline" }}
+                                                    onClick={() => setIsDiscountEditing(true)}
+                                                    title="Click to edit discount percentage"
+                                                >
+                                                    {discountPct > 0 ? "-" : ""}{discountPct}%
+                                                </Text>
+                                                {discountAmount > 0 && (
+                                                    <Text fontSize="xs" color="fg.muted">QAR {discountAmount.toLocaleString()}</Text>
+                                                )}
+                                            </Box>
                                         )}
                                     </HStack>
 

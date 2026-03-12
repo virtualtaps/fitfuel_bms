@@ -26,7 +26,9 @@ import type { SalaryPaymentResponse } from "@/lib/models/SalaryPayment";
 
 interface PnLSummary {
     totalRevenue: number;
+    totalCogs: number;
     totalExpenses: number;
+    grossProfit: number;
     netProfit: number;
     invoiceCount: number;
     profitMargin: number;
@@ -35,6 +37,7 @@ interface PnLSummary {
 interface PeriodBucket {
     label: string;
     revenue: number;
+    cogs: number;
     expenses: number;
     net: number;
     invoiceCount: number;

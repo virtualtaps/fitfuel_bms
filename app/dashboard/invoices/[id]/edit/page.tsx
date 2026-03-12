@@ -43,7 +43,7 @@ export default function EditInvoicePage() {
     const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank-transfer' | 'Fawran' | 'Pending' | undefined>(undefined);
     const [notes, setNotes] = useState("");
-    const [discountAmount, setDiscountAmount] = useState<number | null>(null);
+    const [discountPercentage, setDiscountPercentage] = useState<number | null>(null);
     const [isDiscountEditing, setIsDiscountEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -95,7 +95,7 @@ export default function EditInvoicePage() {
                 setIssueDate(new Date(invoiceData.issueDate).toISOString().split('T')[0]);
                 setPaymentMethod(invoiceData.paymentMethod);
                 setNotes(invoiceData.notes || "");
-                setDiscountAmount(invoiceData.discount > 0 ? invoiceData.discount : null);
+                setDiscountPercentage(invoiceData.discountPercentage > 0 ? invoiceData.discountPercentage : null);
 
                 // Convert invoice items to form items
                 const formItems: InvoiceItem[] = invoiceData.items.map((item, index) => {
@@ -300,8 +300,9 @@ export default function EditInvoicePage() {
         .filter(item => item.isReturn)
         .reduce((sum, item) => sum + (item.quantity * item.rate), 0);
     const netSubtotal = subtotal - returns;
-    const discount = discountAmount !== null ? discountAmount : 0;
-    const total = netSubtotal - discount;
+    const discountPct = discountPercentage !== null ? discountPercentage : 0;
+    const discountAmount = netSubtotal * discountPct / 100;
+    const total = netSubtotal - discountAmount;
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -364,7 +365,7 @@ export default function EditInvoicePage() {
                 clientPhone: clientPhone?.trim() || undefined,
                 clientId: finalClientId,
                 items: invoiceItems,
-                discount: discount,
+                discountPercentage: discountPct,
                 issueDate: new Date(`${issueDate}T00:00:00`).toISOString(),
                 paymentMethod: paymentMethod,
                 notes: notes || undefined,
@@ -465,7 +466,7 @@ export default function EditInvoicePage() {
                 clientPhone: clientPhone?.trim() || undefined,
                 clientId: finalClientId,
                 items: invoiceItems,
-                discount: discount,
+                discountPercentage: discountPct,
                 issueDate: new Date(`${issueDate}T00:00:00`).toISOString(),
                 paymentMethod: paymentMethod,
                 notes: notes || undefined,
@@ -664,14 +665,14 @@ export default function EditInvoicePage() {
                             subtotal={subtotal}
                             returns={returns}
                             netSubtotal={netSubtotal}
-                            discount={discount}
+                            discountPercentage={discountPercentage}
                             discountAmount={discountAmount}
                             total={total}
                             isDiscountEditing={isDiscountEditing}
-                            onDiscountAmountChange={setDiscountAmount}
+                            onDiscountPercentageChange={setDiscountPercentage}
                             onDiscountEditToggle={() => setIsDiscountEditing(!isDiscountEditing)}
                             onDiscountReset={() => {
-                                setDiscountAmount(null);
+                                setDiscountPercentage(null);
                                 setIsDiscountEditing(false);
                             }}
                         />

@@ -16,6 +16,7 @@ import { PnLPeriod } from "./PnLOverview";
 interface PeriodBucket {
     label: string;
     revenue: number;
+    cogs: number;
     expenses: number;
     net: number;
     invoiceCount: number;
@@ -49,7 +50,8 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
 export default function PnLBreakdown({ breakdown, period, isLoading }: PnLBreakdownProps) {
     const maxRevenue = Math.max(...breakdown.map((b) => b.revenue), 1);
     const maxExpenses = Math.max(...breakdown.map((b) => b.expenses), 1);
-    const maxAbs = Math.max(maxRevenue, maxExpenses);
+    const maxCogs = Math.max(...breakdown.map((b) => b.cogs), 1);
+    const maxAbs = Math.max(maxRevenue, maxExpenses, maxCogs);
 
     const periodLabel =
         period === "daily" ? "Day" :
@@ -88,15 +90,23 @@ export default function PnLBreakdown({ breakdown, period, isLoading }: PnLBreakd
                                                 align="center"
                                                 justify="flex-end"
                                                 h="100%"
-                                                title={`${b.label}\nRevenue: QAR ${fmt(b.revenue)}\nExpenses: QAR ${fmt(b.expenses)}\nNet: QAR ${fmt(b.net)}`}
+                                                title={`${b.label}\nRevenue: QAR ${fmt(b.revenue)}\nCOGS: QAR ${fmt(b.cogs)}\nSalaries: QAR ${fmt(b.expenses)}\nNet: QAR ${fmt(b.net)}`}
                                             >
-                                                <HStack gap="2px" align="flex-end" h="full">
+                                                <HStack gap={1} align="flex-end" h="full">
                                                     <Box
                                                         w="8px"
                                                         bg="green.400"
                                                         borderRadius="sm"
                                                         h={`${revH}%`}
                                                         minH={b.revenue > 0 ? "2px" : "0"}
+                                                        transition="height 0.3s ease"
+                                                    />
+                                                    <Box
+                                                        w="8px"
+                                                        bg="red.400"
+                                                        borderRadius="sm"
+                                                        h={`${maxAbs > 0 ? (b.cogs / maxAbs) * 100 : 0}%`}
+                                                        minH={b.cogs > 0 ? "2px" : "0"}
                                                         transition="height 0.3s ease"
                                                     />
                                                     <Box
@@ -137,8 +147,12 @@ export default function PnLBreakdown({ breakdown, period, isLoading }: PnLBreakd
                                     <Text fontSize="xs" color="fg.muted">Revenue</Text>
                                 </HStack>
                                 <HStack gap={1}>
+                                    <Box w={3} h={3} bg="red.400" borderRadius="sm" />
+                                    <Text fontSize="xs" color="fg.muted">COGS</Text>
+                                </HStack>
+                                <HStack gap={1}>
                                     <Box w={3} h={3} bg="orange.400" borderRadius="sm" />
-                                    <Text fontSize="xs" color="fg.muted">Expenses</Text>
+                                    <Text fontSize="xs" color="fg.muted">Salaries</Text>
                                 </HStack>
                             </HStack>
                         </Box>
@@ -155,7 +169,10 @@ export default function PnLBreakdown({ breakdown, period, isLoading }: PnLBreakd
                                             Revenue
                                         </Table.ColumnHeader>
                                         <Table.ColumnHeader px={5} py={3} fontSize="xs" color="fg.muted" textTransform="uppercase" fontWeight="semibold" textAlign="right">
-                                            Expenses
+                                            COGS
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader px={5} py={3} fontSize="xs" color="fg.muted" textTransform="uppercase" fontWeight="semibold" textAlign="right">
+                                            Salaries
                                         </Table.ColumnHeader>
                                         <Table.ColumnHeader px={5} py={3} fontSize="xs" color="fg.muted" textTransform="uppercase" fontWeight="semibold" textAlign="right">
                                             Net
@@ -176,6 +193,11 @@ export default function PnLBreakdown({ breakdown, period, isLoading }: PnLBreakd
                                                 <Table.Cell px={5} py={3} textAlign="right">
                                                     <Text fontSize="sm" color="green.600" fontWeight="medium">
                                                         QAR {fmt(b.revenue)}
+                                                    </Text>
+                                                </Table.Cell>
+                                                <Table.Cell px={5} py={3} textAlign="right">
+                                                    <Text fontSize="sm" color="red.600">
+                                                        QAR {fmt(b.cogs)}
                                                     </Text>
                                                 </Table.Cell>
                                                 <Table.Cell px={5} py={3} textAlign="right">

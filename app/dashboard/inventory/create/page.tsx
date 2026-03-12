@@ -47,6 +47,7 @@ export default function CreateProductPage() {
     const [sku, setSku] = useState("");
     const [category, setCategory] = useState("");
     const [sellingPrice, setSellingPrice] = useState("");
+    const [buyingPrice, setBuyingPrice] = useState("");
     const [initialStock, setInitialStock] = useState("");
     const [minStock, setMinStock] = useState("");
     const [location, setLocation] = useState("");
@@ -146,6 +147,7 @@ export default function CreateProductPage() {
                 stock: parseInt(initialStock) || 0,
                 minStock: parseInt(minStock) || undefined,
                 sellingPrice: parseFloat(sellingPrice) || 0,
+                buyingPrice: parseFloat(buyingPrice) || undefined,
                 location: location || undefined,
                 supplierName: supplierName || undefined,
                 supplierContact: supplierContact || undefined,
@@ -359,6 +361,16 @@ export default function CreateProductPage() {
                                                 size="sm"
                                                 value={sellingPrice}
                                                 onChange={(e) => setSellingPrice(e.target.value)}
+                                            />
+                                        </Field.Root>
+                                        <Field.Root>
+                                            <Field.Label fontSize="sm">Buying Price</Field.Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                size="sm"
+                                                value={buyingPrice}
+                                                onChange={(e) => setBuyingPrice(e.target.value)}
                                             />
                                         </Field.Root>
                                     </SimpleGrid>

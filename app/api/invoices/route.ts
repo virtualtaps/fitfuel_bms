@@ -104,16 +104,24 @@ async function postHandler(request: AuthenticatedRequest) {
 
         const validatedData = invoiceSchema.parse(cleanedBody);
 
-        // Calculate amounts (preserve productId if present)
-        const items = validatedData.items.map(item => ({
-            ...item,
-            amount: item.quantity * item.rate,
-            productId: item.productId, // Preserve productId for inventory updates
+        // Calculate amounts (preserve productId if present, look up buying price)
+        const items = await Promise.all(validatedData.items.map(async item => {
+            let buyingPrice = 0;
+            if (item.productId) {
+                const product = await findProductById(item.productId);
+                buyingPrice = product?.buyingPrice ?? 0;
+            }
+            return {
+                ...item,
+                amount: item.quantity * item.rate,
+                productId: item.productId,
+                buyingPrice,
+            };
         }));
         const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-        // Calculate discount on positive subtotal only (returns are already subtracted)
-        const discountBase = subtotal > 0 ? subtotal : 0;
-        const discount = validatedData.discount !== undefined ? validatedData.discount : 0;
+        // Calculate discount amount from percentage
+        const discountPercentage = validatedData.discountPercentage !== undefined ? validatedData.discountPercentage : 0;
+        const discount = subtotal > 0 ? subtotal * discountPercentage / 100 : 0;
         const total = subtotal - discount;
 
         const invoiceStatus = validatedData.status || 'Draft';
@@ -149,6 +157,7 @@ async function postHandler(request: AuthenticatedRequest) {
             clientId: finalClientId,
             items,
             subtotal,
+            discountPercentage,
             discount,
             total,
             issueDate: typeof validatedData.issueDate === 'string' ? new Date(validatedData.issueDate) : validatedData.issueDate,

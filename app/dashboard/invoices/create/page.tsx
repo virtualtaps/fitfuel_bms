@@ -30,7 +30,7 @@ export default function CreateInvoicePage() {
     const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank-transfer' | 'Fawran' | 'Pending' | undefined>(undefined);
     const [notes, setNotes] = useState("");
-    const [discountAmount, setDiscountAmount] = useState<number | null>(null);
+    const [discountPercentage, setDiscountPercentage] = useState<number | null>(null);
     const [isDiscountEditing, setIsDiscountEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -169,7 +169,7 @@ export default function CreateInvoicePage() {
         try {
             // Search for product by SKU
             const response = await apiClient.get<ProductResponse>(`/api/inventory/search-by-sku?sku=${encodeURIComponent(barcode)}`);
-            
+
             if (response.success && response.data) {
                 // Product found - auto-select it
                 selectProduct(itemId, response.data);
@@ -268,13 +268,14 @@ export default function CreateInvoicePage() {
         .filter(item => item.isReturn)
         .reduce((sum, item) => sum + (item.quantity * item.rate), 0);
     const netSubtotal = subtotal - returns;
-    const discount = discountAmount !== null ? discountAmount : 0;
-    const total = netSubtotal - discount;
+    const discountPct = discountPercentage !== null ? discountPercentage : 0;
+    const discountAmount = netSubtotal * discountPct / 100;
+    const total = netSubtotal - discountAmount;
 
     // Check if there are unsaved changes
     const hasUnsavedChanges = items.some(item =>
         item.description || item.quantity > 0 || item.rate > 0
-    ) || clientName || clientPhone || notes || discountAmount !== null || paymentMethod;
+    ) || clientName || clientPhone || notes || discountPercentage !== null || paymentMethod;
 
     // Validate stock quantities before saving/sending
     const validateStockQuantities = (): { valid: boolean; error?: string } => {
@@ -366,7 +367,7 @@ export default function CreateInvoicePage() {
                 clientPhone: clientPhone?.trim() || undefined,
                 clientId: finalClientId,
                 items: invoiceItems,
-                discount: discount,
+                discountPercentage: discountPct,
                 issueDate: new Date().toISOString(),
                 paymentMethod: paymentMethod,
                 notes: notes || undefined,
@@ -466,7 +467,7 @@ export default function CreateInvoicePage() {
                 clientPhone: clientPhone?.trim() || undefined,
                 clientId: finalClientId,
                 items: invoiceItems,
-                discount: discount,
+                discountPercentage: discountPct,
                 issueDate: new Date().toISOString(),
                 paymentMethod: paymentMethod,
                 notes: notes || undefined,
@@ -588,14 +589,14 @@ export default function CreateInvoicePage() {
                             subtotal={subtotal}
                             returns={returns}
                             netSubtotal={netSubtotal}
-                            discount={discount}
+                            discountPercentage={discountPercentage}
                             discountAmount={discountAmount}
                             total={total}
                             isDiscountEditing={isDiscountEditing}
-                            onDiscountAmountChange={setDiscountAmount}
+                            onDiscountPercentageChange={setDiscountPercentage}
                             onDiscountEditToggle={() => setIsDiscountEditing(!isDiscountEditing)}
                             onDiscountReset={() => {
-                                setDiscountAmount(null);
+                                setDiscountPercentage(null);
                                 setIsDiscountEditing(false);
                             }}
                         />
