@@ -1,55 +1,54 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-    Box,
-    Card,
-    HStack,
-    VStack,
-    Text,
-    Heading,
-    Button,
-    Badge,
-    IconButton,
-    Flex,
-    Dialog,
-    Portal,
-    CloseButton,
-} from "@chakra-ui/react";
-import {
-    LuArrowLeft,
-    LuPencil,
-    LuSend,
-    LuPrinter,
-    LuCopy,
-    LuTrash2,
-} from "react-icons/lu";
+import { VStack, Text, Button } from "@chakra-ui/react";
 import Link from "next/link";
+import { LuArrowLeft } from "react-icons/lu";
 import { useParams, useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { LightMode } from "@/components/ui/color-mode";
-import { useAuth } from "@/context/AuthContext";
 import { toaster } from "@/components/ui/toaster";
 import { apiClient } from "@/lib/api";
 import { InvoiceResponse } from "@/lib/models/Invoice";
+import InvoicePageHeader from "./components/InvoicePageHeader";
+import InvoiceDocument from "./components/InvoiceDocument";
+import SendInvoiceDialog from "./components/SendInvoiceDialog";
+import DeleteInvoiceDialog from "./components/DeleteInvoiceDialog";
 
-const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-        case "paid": return "green";
-        case "pending": return "yellow";
-        case "overdue": return "red";
-        case "draft": return "gray";
-        default: return "gray";
+const PRINT_STYLES = `
+    .invoice-print-content {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.13);
+        position: relative;
+        font-family: 'Segoe UI', Arial, sans-serif;
     }
-};
+    @media print {
+        @page { size: A4 portrait; margin: 10mm 8mm 10mm 8mm; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        html, body { margin: 0 !important; padding: 0 !important; background: white !important; }
+        body * { visibility: hidden; }
+        .invoice-print-content, .invoice-print-content * { visibility: visible !important; }
+        .invoice-print-content {
+            position: relative !important;
+            width: 194mm !important;
+            min-height: 277mm !important;
+            height: auto !important;
+            background: white !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+            margin: 0 auto !important;
+        }
+        .no-print { display: none !important; }
+    }
+`;
 
 export default function InvoiceDetailPage() {
     const params = useParams();
     const router = useRouter();
     const invoiceId = params.id as string;
-    const { user: currentUser } = useAuth();
 
-    // Data state
     const [invoice, setInvoice] = useState<InvoiceResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -65,54 +64,39 @@ export default function InvoiceDetailPage() {
         bankBranch: "",
     });
 
-    // UI state
     const [isSending, setIsSending] = useState(false);
-    const [isDownloading, setIsDownloading] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank-transfer' | 'Fawran' | 'Pending' | undefined>(undefined);
 
     useEffect(() => {
-        if (invoiceId) {
-            fetchInvoice();
-        }
+        if (invoiceId) fetchInvoice();
         fetchCompanyInfo();
     }, [invoiceId]);
 
     const fetchCompanyInfo = async () => {
         try {
             const response = await apiClient.get<{
-                name: string;
-                email: string;
-                phone: string;
-                address: string;
-                city: string;
-                zipCode?: string;
-                bankName?: string;
-                bankAccount?: string;
-                bankIBAN?: string;
-                bankBranch?: string;
+                name: string; email: string; phone: string; address: string;
+                city: string; zipCode?: string; bankName?: string;
+                bankAccount?: string; bankIBAN?: string; bankBranch?: string;
             }>("/api/settings/company");
             if (response.success && response.data) {
                 const addressParts = [response.data.address, response.data.city];
-                if (response.data.zipCode) {
-                    addressParts.push(response.data.zipCode);
-                }
-                const fullAddress = addressParts.filter(Boolean).join(", ");
+                if (response.data.zipCode) addressParts.push(response.data.zipCode);
                 setCompanyInfo({
                     name: response.data.name,
                     email: response.data.email,
                     phone: response.data.phone,
-                    address: fullAddress,
+                    address: addressParts.filter(Boolean).join(", "),
                     bankName: response.data.bankName || "",
                     bankAccount: response.data.bankAccount || "",
                     bankIBAN: response.data.bankIBAN || "",
                     bankBranch: response.data.bankBranch || "",
                 });
             }
-        } catch (error) {
-            console.error("Failed to fetch company info:", error);
+        } catch (err) {
+            console.error("Failed to fetch company info:", err);
         }
     };
 
@@ -123,38 +107,31 @@ export default function InvoiceDetailPage() {
             const response = await apiClient.get<InvoiceResponse>(`/api/invoices/${invoiceId}`);
             if (response.success && response.data) {
                 setInvoice(response.data);
-                setPaymentMethod(response.data.paymentMethod);
 
                 const productIds = response.data.items
-                    .map(item => item.productId)
+                    .map((item) => item.productId)
                     .filter((id): id is string => !!id);
 
                 if (productIds.length > 0) {
-                    const productsMap = new Map<string, { arabicName?: string }>();
+                    const map = new Map<string, { arabicName?: string }>();
                     await Promise.all(
                         productIds.map(async (productId) => {
                             try {
-                                const productResponse = await apiClient.get<{ arabicName?: string }>(`/api/inventory/${productId}`);
-                                if (productResponse.success && productResponse.data) {
-                                    productsMap.set(productId, { arabicName: productResponse.data.arabicName });
-                                }
-                            } catch (error) {
-                                console.error(`Failed to fetch product ${productId}:`, error);
+                                const res = await apiClient.get<{ arabicName?: string }>(`/api/inventory/${productId}`);
+                                if (res.success && res.data) map.set(productId, { arabicName: res.data.arabicName });
+                            } catch {
+                                // ignore individual product fetch failures
                             }
                         })
                     );
-                    setProductsMap(productsMap);
+                    setProductsMap(map);
                 }
             } else {
                 throw new Error(response.error || "Failed to load invoice");
             }
         } catch (err: any) {
             setError(err.message || "Failed to load invoice");
-            toaster.create({
-                title: "Error",
-                description: err.message || "Failed to load invoice",
-                type: "error",
-            });
+            toaster.create({ title: "Error", description: err.message || "Failed to load invoice", type: "error" });
         } finally {
             setIsLoading(false);
         }
@@ -162,113 +139,191 @@ export default function InvoiceDetailPage() {
 
     const handlePrint = () => {
         setIsPrinting(true);
-        setTimeout(() => {
-            window.print();
-            setIsPrinting(false);
-        }, 100);
+        setTimeout(() => { window.print(); setIsPrinting(false); }, 100);
     };
 
+    const handlePrintReceipt = () => {
+        if (!invoice) return;
 
+        const totalItems = invoice.items.reduce((s, i) => s + i.quantity, 0);
+
+        const itemsHtml = invoice.items.map((item) => {
+            const amount = item.amount ?? item.quantity * item.rate;
+            const arabicName = item.productId ? productsMap.get(item.productId)?.arabicName : undefined;
+            return `
+                <div style="margin-bottom:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <span style="font-weight:700;width:18px;flex-shrink:0;">${item.quantity}</span>
+                        <div style="flex:1;padding-left:6px;">
+                            <div style="line-height:1.3;">${item.description}</div>
+                            ${arabicName ? `<div style="font-size:10px;color:#555;direction:rtl;margin-top:2px;">${arabicName}</div>` : ""}
+                            <div style="font-size:10px;color:#555;">${item.quantity} × QAR ${item.rate.toLocaleString()}</div>
+                        </div>
+                        <span style="font-weight:700;flex-shrink:0;padding-left:6px;">QAR ${amount.toLocaleString()}</span>
+                    </div>
+                </div>`;
+        }).join("");
+
+        const discountHtml = invoice.discount > 0 ? `
+            <div style="display:flex;justify-content:space-between;">
+                <span>Discount${invoice.discountPercentage > 0 ? ` (${invoice.discountPercentage}%)` : ""} / خصم</span>
+                <span style="font-weight:700;color:#c0392b;">- QAR ${invoice.discount.toLocaleString()}</span>
+            </div>` : "";
+
+        const paymentHtml = invoice.paymentMethod ? `
+            <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+            <div style="display:flex;justify-content:space-between;">
+                <span style="font-weight:700;">Payment:</span>
+                <span>${invoice.paymentMethod}</span>
+            </div>
+            <div style="font-size:10px;color:#555;direction:rtl;text-align:right;">طريقة الدفع</div>` : "";
+
+        const notesHtml = invoice.notes ? `
+            <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+            <div style="font-size:10px;color:#555;font-style:italic;">${invoice.notes}</div>` : "";
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Receipt ${invoice.invoiceNumber}</title>
+<style>
+  @page { size: 80mm auto; margin: 0; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; padding: 6mm 4mm 10mm 4mm; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #000; width: 80mm; background: white; }
+  img { display: block; margin: 0 auto 6px auto; height: 44px; width: 44px; object-fit: cover; border-radius: 50%; }
+</style>
+</head>
+<body>
+  <div style="text-align:center;">
+    <img src="${window.location.origin}/logo.png" alt="logo"/>
+    <div style="font-weight:900;font-size:15px;">${companyInfo.name}</div>
+    ${companyInfo.address ? `<div style="font-size:10px;color:#555;margin-top:2px;">${companyInfo.address}</div>` : ""}
+    ${companyInfo.phone ? `<div style="font-size:10px;color:#555;margin-top:1px;">${companyInfo.phone}</div>` : ""}
+    <div style="font-size:10px;color:#555;margin-top:2px;">${new Date(invoice.issueDate).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+  </div>
+
+  <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+
+  <div style="text-align:center;">
+    <div style="font-size:10px;color:#555;">Invoice No. / رقم الفاتورة</div>
+    <div style="font-weight:900;font-size:18px;letter-spacing:3px;margin-top:2px;">${invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}</div>
+  </div>
+
+  <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+
+  <div>
+    <div style="display:flex;justify-content:space-between;">
+      <span style="font-weight:700;">Customer:</span>
+      <span style="text-align:right;max-width:55%;">${invoice.client || "Walk-in"}</span>
+    </div>
+    <div style="font-size:10px;color:#555;direction:rtl;text-align:right;">العميل</div>
+    ${invoice.clientPhone ? `
+    <div style="display:flex;justify-content:space-between;margin-top:4px;">
+      <span style="font-weight:700;">Phone:</span>
+      <span>${invoice.clientPhone}</span>
+    </div>
+    <div style="font-size:10px;color:#555;direction:rtl;text-align:right;">هاتف العميل</div>` : ""}
+  </div>
+
+  <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+
+  <div style="display:flex;justify-content:space-between;font-weight:700;font-size:11px;margin-bottom:4px;">
+    <span style="width:18px;">QTY</span>
+    <span style="flex:1;padding-left:6px;">ITEM</span>
+    <span>AMOUNT</span>
+  </div>
+  <div style="border-top:1px solid #000;margin-bottom:4px;"></div>
+
+  ${itemsHtml}
+
+  <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+
+  ${discountHtml}
+  <div style="border-top:1px solid #000;margin:6px 0 4px 0;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;">
+    <div>
+      <span style="font-weight:700;font-size:13px;">TOTAL (${totalItems} items)</span>
+      <div style="font-size:10px;color:#555;direction:rtl;">المجموع (${totalItems} عناصر)</div>
+    </div>
+    <span style="font-weight:900;font-size:16px;">QAR ${invoice.total.toLocaleString()}</span>
+  </div>
+
+  ${paymentHtml}
+  ${notesHtml}
+
+  <div style="border-top:1px dashed #555;margin:8px 0 4px 0;"></div>
+  <div style="text-align:center;">
+    <div style="font-weight:800;font-size:14px;">Thank you! / شكراً!</div>
+    ${companyInfo.email ? `<div style="font-size:10px;color:#555;margin-top:4px;">${companyInfo.email}</div>` : ""}
+  </div>
+</body>
+</html>`;
+
+        const win = window.open("", "_blank", "width=320,height=600");
+        if (!win) return;
+        win.document.write(html);
+        win.document.close();
+        win.onload = () => { win.print(); win.close(); };
+    };
 
     const handleDuplicate = async () => {
         if (!invoice) return;
-
-        toaster.create({
-            id: "duplicating",
-            title: "Creating duplicate...",
-            type: "loading",
-        });
-
+        toaster.create({ id: "duplicating", title: "Creating duplicate...", type: "loading" });
         try {
             const response = await apiClient.post<InvoiceResponse>(`/api/invoices/${invoiceId}/duplicate`);
             const newInvoice = response.data;
             if (response.success && newInvoice) {
                 toaster.dismiss("duplicating");
-                toaster.create({
-                    title: "Invoice duplicated",
-                    description: `Redirecting to new invoice...`,
-                    type: "success",
-                });
+                toaster.create({ title: "Invoice duplicated", description: "Redirecting to new invoice...", type: "success" });
                 setTimeout(() => router.push(`/dashboard/invoices/${newInvoice.id}`), 500);
             } else {
                 throw new Error(response.error || "Failed to duplicate invoice");
             }
         } catch (err: any) {
             toaster.dismiss("duplicating");
-            toaster.create({
-                title: "Failed to duplicate invoice",
-                description: err.message || "Please try again",
-                type: "error",
-            });
+            toaster.create({ title: "Failed to duplicate invoice", description: err.message || "Please try again", type: "error" });
         }
     };
 
     const handleSend = async () => {
         if (!invoice) return;
-
         setIsSending(true);
         setSendDialogOpen(false);
-        toaster.create({
-            id: "sending",
-            title: "Sending invoice...",
-            type: "loading",
-        });
-
+        toaster.create({ id: "sending", title: "Sending invoice...", type: "loading" });
         try {
             const response = await apiClient.post(`/api/invoices/${invoiceId}/send`);
             if (response.success) {
                 await fetchInvoice();
                 toaster.dismiss("sending");
-                toaster.create({
-                    title: "Invoice sent!",
-                    description: `Invoice has been sent successfully.`,
-                    type: "success",
-                });
+                toaster.create({ title: "Invoice sent!", description: "Invoice has been sent successfully.", type: "success" });
             } else {
                 throw new Error(response.error || "Failed to send invoice");
             }
         } catch (err: any) {
             toaster.dismiss("sending");
-            toaster.create({
-                title: "Failed to send invoice",
-                description: err.message || "Please try again",
-                type: "error",
-            });
+            toaster.create({ title: "Failed to send invoice", description: err.message || "Please try again", type: "error" });
         } finally {
             setIsSending(false);
         }
     };
 
-
     const handleDelete = async () => {
         if (!invoice) return;
-
         setDeleteDialogOpen(false);
-        toaster.create({
-            id: "deleting",
-            title: "Deleting invoice...",
-            type: "loading",
-        });
-
+        toaster.create({ id: "deleting", title: "Deleting invoice...", type: "loading" });
         try {
             const response = await apiClient.delete(`/api/invoices/${invoiceId}`);
             if (response.success) {
                 toaster.dismiss("deleting");
-                toaster.create({
-                    title: "Invoice deleted",
-                    type: "success",
-                });
+                toaster.create({ title: "Invoice deleted", type: "success" });
                 router.push("/dashboard/invoices");
             } else {
                 throw new Error(response.error || "Failed to delete invoice");
             }
         } catch (err: any) {
             toaster.dismiss("deleting");
-            toaster.create({
-                title: "Failed to delete invoice",
-                description: err.message || "Please try again",
-                type: "error",
-            });
+            toaster.create({ title: "Failed to delete invoice", description: err.message || "Please try again", type: "error" });
         }
     };
 
@@ -288,371 +343,50 @@ export default function InvoiceDetailPage() {
                 <VStack gap={6} align="stretch" py={8}>
                     <Text color="red.500">Error: {error || "Invoice not found"}</Text>
                     <Link href="/dashboard/invoices">
-                        <Button variant="outline" size="sm">
-                            <LuArrowLeft /> Back to Invoices
-                        </Button>
+                        <Button variant="outline" size="sm"><LuArrowLeft /> Back to Invoices</Button>
                     </Link>
                 </VStack>
             </DashboardLayout>
         );
     }
 
-
     return (
         <>
-            <style jsx global>{`
-                /* A4 Page Container */
-                .invoice-print-content {
-                    width: 210mm;
-                    min-height: 297mm;
-                    margin: 0 auto;
-                    background: white;
-                    box-shadow: 0 4px 32px rgba(0,0,0,0.13);
-                    position: relative;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                }
-                
-                @media print {
-                    @page {
-                        size: A4 portrait;
-                        margin: 10mm 8mm 10mm 8mm;
-                    }
-                    
-                    @page :first { margin-top: 0; }
-                    @page :left { margin-left: 0; }
-                    @page :right { margin-right: 0; }
-                    
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                    
-                    html, body {
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        background: white !important;
-                        width: 210mm !important;
-                        height: 297mm !important;
-                    }
-                    
-                    body * {
-                        visibility: hidden;
-                    }
-                    
-                    .invoice-print-content,
-                    .invoice-print-content * {
-                        visibility: visible !important;
-                    }
-                    
-                    .invoice-print-content {
-                        position: relative !important;
-                        width: 194mm !important;
-                        /* allow content to size to its intrinsic height instead of forcing full page height
-                           this removes extra white space when the invoice is shorter than the A4 page */
-                        min-height: 277mm !important;
-                        height: auto !important;
-                        background: white !important;
-                        box-shadow: none !important;
-                        overflow: hidden !important;
-                        margin: 0 auto !important;
-                    }
-                    
-                    .invoice-print-content button,
-                    .invoice-print-content .chakra-button,
-                    .no-print {
-                        display: none !important;
-                    }
-                }
-            `}</style>
+            <style jsx global>{PRINT_STYLES}</style>
             <DashboardLayout>
                 <VStack gap={6} align="stretch">
-                    {/* Header Actions */}
-                    <Flex justify="space-between" align="center" flexWrap="wrap" gap={4} className="no-print">
-                        <HStack gap={4}>
-                            <Link href="/dashboard/invoices">
-                                <IconButton variant="ghost" size="sm" aria-label="Back">
-                                    <LuArrowLeft />
-                                </IconButton>
-                            </Link>
-                            <Box>
-                                <HStack gap={3}>
-                                    <Heading size="lg" fontWeight="semibold">{invoice.invoiceNumber}</Heading>
-                                    <Badge
-                                        colorPalette={getStatusColor(invoice.status)}
-                                        variant="subtle"
-                                        fontSize="xs"
-                                        px={3}
-                                        py={1}
-                                        borderRadius="full"
-                                        textTransform="capitalize"
-                                    >
-                                        {invoice.status}
-                                    </Badge>
-                                </HStack>
-                                <Text color="fg.muted" fontSize="sm">
-                                    Created on {new Date(invoice.issueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                </Text>
-                            </Box>
-                        </HStack>
-                        <HStack gap={2} flexWrap="wrap">
-                            <Button variant="outline" size="sm" loading={isPrinting} onClick={handlePrint}>
-                                <LuPrinter /> Print
-                            </Button>
+                    <InvoicePageHeader
+                        invoice={invoice}
+                        invoiceId={invoiceId}
+                        isPrinting={isPrinting}
+                        isSending={isSending}
+                        onPrint={handlePrint}
+                        onPrintReceipt={handlePrintReceipt}
+                        onDuplicate={handleDuplicate}
+                        onSendClick={() => setSendDialogOpen(true)}
+                        onDeleteClick={() => setDeleteDialogOpen(true)}
+                    />
 
-                            <Button variant="outline" size="sm" onClick={handleDuplicate}>
-                                <LuCopy /> Duplicate
-                            </Button>
-                            <Link href={`/dashboard/invoices/${invoiceId}/edit`}>
-                                <Button variant="outline" size="sm">
-                                    <LuPencil /> Edit
-                                </Button>
-                            </Link>
-                            <Button colorPalette="blue" size="sm" loading={isSending} loadingText="Sending..." onClick={() => setSendDialogOpen(true)}>
-                                <LuSend /> Send Invoice
-                            </Button>
-                        </HStack>
-                    </Flex>
-
-                    {/* Invoice Document - A4 */}
-                    <LightMode>
-                        <Card.Root border="none" bg="white" className="invoice-print-content" position="relative">
-                            <Card.Body p={0}>
-                                {/* All hardcoded colors so LightMode is irrelevant — safe for print */}
-                                <Box
-                                    style={{
-                                        padding: "40px 52px 48px 52px",
-                                        color: "#111",
-                                        background: "white",
-                                    }}
-                                >
-                                    {/* ── HEADER ── */}
-                                    <div style={{ textAlign: "center", marginBottom: "28px" }}>
-                                        <img
-                                            src="/logo.png"
-                                            alt="logo"
-                                            style={{
-                                                height: "60px",
-                                                width: "60px",
-                                                objectFit: "cover",
-                                                borderRadius: "50%",
-                                                marginBottom: "10px",
-                                                display: "inline-block",
-                                            }}
-                                        />
-                                        <div style={{ fontWeight: 900, fontSize: "22px", letterSpacing: "0.5px", color: "#111" }}>
-                                            {companyInfo.name}
-                                        </div>
-                                        {companyInfo.address && (
-                                            <div style={{ fontSize: "13px", color: "#666", marginTop: "3px" }}>
-                                                {companyInfo.address}
-                                            </div>
-                                        )}
-                                        <div style={{ fontSize: "13px", color: "#666", marginTop: "3px" }}>
-                                            {new Date(invoice.issueDate).toLocaleString("en-GB", {
-                                                day: "2-digit", month: "2-digit", year: "numeric",
-                                                hour: "2-digit", minute: "2-digit",
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* ── DIVIDER ── */}
-                                    <div style={{ borderTop: "2px dashed #bbb", margin: "0 0 24px 0" }} />
-
-                                    {/* ── INVOICE NUMBER ── */}
-                                    <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                                        <div style={{ fontWeight: 700, fontSize: "14px", color: "#111" }}>Invoice Number</div>
-                                        <div style={{ fontSize: "12px", color: "#888", direction: "rtl" }}>رقم الفاتورة</div>
-                                        <div style={{
-                                            fontWeight: 900, fontSize: "32px", letterSpacing: "4px",
-                                            fontFamily: "monospace", color: "#111", marginTop: "6px",
-                                        }}>
-                                            {invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
-                                        </div>
-                                    </div>
-
-                                    {/* ── DIVIDER ── */}
-                                    <div style={{ borderTop: "2px dashed #bbb", margin: "0 0 22px 0" }} />
-
-                                    {/* ── CUSTOMER ── */}
-                                    <div style={{ marginBottom: "22px" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                                            <span style={{ fontWeight: 700, fontSize: "14px", color: "#111" }}>Customer:</span>
-                                            <span style={{ fontSize: "14px", color: "#111" }}>{invoice.client || "Walk-in Customer"}</span>
-                                        </div>
-                                        <div style={{ fontSize: "12px", color: "#888", direction: "rtl", textAlign: "right" }}>العميل</div>
-
-                                        {invoice.clientPhone && (
-                                            <>
-                                                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", marginBottom: "2px" }}>
-                                                    <span style={{ fontWeight: 700, fontSize: "14px", color: "#111" }}>Customer Phone:</span>
-                                                    <span style={{ fontSize: "14px", color: "#111" }}>{invoice.clientPhone}</span>
-                                                </div>
-                                                <div style={{ fontSize: "12px", color: "#888", direction: "rtl", textAlign: "right" }}>هاتف العميل</div>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    {/* ── DIVIDER ── */}
-                                    <div style={{ borderTop: "2px dashed #bbb", margin: "0 0 0 0" }} />
-
-                                    {/* ── ITEMS ── */}
-                                    <div>
-                                        {invoice.items.map((item, index) => {
-                                            const amount = item.amount ?? (item.quantity * item.rate);
-                                            const arabicName = item.productId ? productsMap.get(item.productId)?.arabicName : undefined;
-                                            return (
-                                                <div key={index}>
-                                                    <div style={{
-                                                        display: "flex", alignItems: "flex-start",
-                                                        justifyContent: "space-between", gap: "16px",
-                                                        padding: "18px 0",
-                                                    }}>
-                                                        {/* Qty */}
-                                                        <span style={{
-                                                            fontWeight: 700, fontSize: "14px", color: "#111",
-                                                            minWidth: "28px", flexShrink: 0, paddingTop: "1px",
-                                                        }}>
-                                                            {item.quantity}
-                                                        </span>
-                                                        {/* Name + Arabic */}
-                                                        <div style={{ flex: 1 }}>
-                                                            <div style={{ fontSize: "14px", color: "#111", lineHeight: "1.45" }}>
-                                                                {item.description}
-                                                            </div>
-                                                            {arabicName && (
-                                                                <div style={{
-                                                                    fontSize: "12px", color: "#888",
-                                                                    direction: "rtl", marginTop: "4px", lineHeight: "1.4",
-                                                                }}>
-                                                                    {arabicName}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        {/* Price */}
-                                                        <span style={{
-                                                            fontWeight: 700, fontSize: "14px", color: "#111",
-                                                            whiteSpace: "nowrap", flexShrink: 0,
-                                                        }}>
-                                                            QAR {amount.toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                    <div style={{ borderTop: "2px dashed #bbb" }} />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* ── TOTALS ── */}
-                                    <div style={{ padding: "18px 0 4px 0" }}>
-                                        {invoice.discount > 0 && (
-                                            <>
-                                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                                                    <span style={{ fontSize: "14px", color: "#555" }}>Discount{invoice.discountPercentage > 0 ? ` (${invoice.discountPercentage}%)` : ''}</span>
-                                                    <span style={{ fontWeight: 700, fontSize: "14px", color: "#c0392b" }}>
-                                                        - QAR {invoice.discount.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                                <div style={{ fontSize: "12px", color: "#888", direction: "rtl", textAlign: "right", marginBottom: "12px" }}>خصم</div>
-                                            </>
-                                        )}
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                                            <div>
-                                                <span style={{ fontWeight: 700, fontSize: "15px", color: "#111" }}>
-                                                    Total ({invoice.items.reduce((s, i) => s + i.quantity, 0)} items)
-                                                </span>
-                                                <div style={{ fontSize: "12px", color: "#888", direction: "rtl" }}>
-                                                    المجموع ({invoice.items.reduce((s, i) => s + i.quantity, 0)} عناصر)
-                                                </div>
-                                            </div>
-                                            <span style={{ fontWeight: 900, fontSize: "22px", color: "#111" }}>
-                                                QAR {invoice.total.toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {invoice.notes && (
-                                        <>
-                                            <div style={{ borderTop: "2px dashed #bbb", margin: "16px 0" }} />
-                                            <div style={{ fontSize: "13px", color: "#666", fontStyle: "italic" }}>{invoice.notes}</div>
-                                        </>
-                                    )}
-
-                                    {/* ── DIVIDER ── */}
-                                    <div style={{ borderTop: "2px dashed #bbb", margin: "20px 0 24px 0" }} />
-
-                                    {/* ── FOOTER ── */}
-                                    <div style={{ textAlign: "center" }}>
-                                        <div style={{ fontWeight: 800, fontSize: "17px", color: "#111", marginBottom: "4px" }}>Thank you !</div>
-                                        <div style={{ fontWeight: 800, fontSize: "17px", color: "#111", marginBottom: "8px" }}>! شكراً</div>
-                                        {invoice.paymentMethod && (
-                                            <div style={{ fontWeight: 600, fontSize: "14px", color: "#444" }}>Payment Method: {invoice.paymentMethod}</div>
-                                        )}
-                                    </div>
-
-                                </Box>
-                            </Card.Body>
-                        </Card.Root>
-                    </LightMode>
+                    <InvoiceDocument
+                        invoice={invoice}
+                        companyInfo={companyInfo}
+                        productsMap={productsMap}
+                    />
 
                 </VStack>
 
-                {/* Send Invoice Dialog */}
-                <Dialog.Root open={sendDialogOpen} onOpenChange={(e) => setSendDialogOpen(e.open)}>
-                    <Portal>
-                        <Dialog.Backdrop bg="blackAlpha.600" backdropFilter="blur(4px)" />
-                        <Dialog.Positioner>
-                            <Dialog.Content bg="bg.surface" borderRadius="xl" maxW="400px" mx={4}>
-                                <Dialog.Header p={5} pb={0}>
-                                    <Dialog.Title fontWeight="semibold">Send Invoice</Dialog.Title>
-                                </Dialog.Header>
-                                <Dialog.Body p={5}>
-                                    <Text color="fg.muted">Send invoice {invoice?.invoiceNumber}?</Text>
-                                </Dialog.Body>
-                                <Dialog.Footer p={5} pt={0} gap={3}>
-                                    <Dialog.ActionTrigger asChild>
-                                        <Button variant="outline" size="sm">Cancel</Button>
-                                    </Dialog.ActionTrigger>
-                                    <Button colorPalette="blue" size="sm" onClick={handleSend}>
-                                        <LuSend /> Send
-                                    </Button>
-                                </Dialog.Footer>
-                                <Dialog.CloseTrigger asChild position="absolute" top={3} right={3}>
-                                    <CloseButton size="sm" />
-                                </Dialog.CloseTrigger>
-                            </Dialog.Content>
-                        </Dialog.Positioner>
-                    </Portal>
-                </Dialog.Root>
+                <SendInvoiceDialog
+                    open={sendDialogOpen}
+                    onOpenChange={setSendDialogOpen}
+                    invoice={invoice}
+                    onSend={handleSend}
+                />
 
-                {/* Delete Invoice Dialog */}
-                <Dialog.Root open={deleteDialogOpen} onOpenChange={(e) => setDeleteDialogOpen(e.open)}>
-                    <Portal>
-                        <Dialog.Backdrop bg="blackAlpha.600" backdropFilter="blur(4px)" />
-                        <Dialog.Positioner>
-                            <Dialog.Content bg="bg.surface" borderRadius="xl" maxW="400px" mx={4}>
-                                <Dialog.Header p={5} pb={0}>
-                                    <Dialog.Title fontWeight="semibold">Delete Invoice</Dialog.Title>
-                                </Dialog.Header>
-                                <Dialog.Body p={5}>
-                                    <Text color="fg.muted">
-                                        Are you sure you want to delete this invoice? This action cannot be undone.
-                                    </Text>
-                                </Dialog.Body>
-                                <Dialog.Footer p={5} pt={0} gap={3}>
-                                    <Dialog.ActionTrigger asChild>
-                                        <Button variant="outline" size="sm">Cancel</Button>
-                                    </Dialog.ActionTrigger>
-                                    <Button colorPalette="red" size="sm" onClick={handleDelete}>
-                                        <LuTrash2 /> Delete
-                                    </Button>
-                                </Dialog.Footer>
-                                <Dialog.CloseTrigger asChild position="absolute" top={3} right={3}>
-                                    <CloseButton size="sm" />
-                                </Dialog.CloseTrigger>
-                            </Dialog.Content>
-                        </Dialog.Positioner>
-                    </Portal>
-                </Dialog.Root>
+                <DeleteInvoiceDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                    onDelete={handleDelete}
+                />
             </DashboardLayout>
         </>
     );

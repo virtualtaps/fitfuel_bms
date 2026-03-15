@@ -1,6 +1,11 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { getDatabase } from '../lib/mongodb';
 import { createUser, findUserByEmail, getUserCollection } from '../lib/models/User';
 import { hashPassword } from '../lib/auth';
+
+// Load environment variables from .env.local
+config({ path: resolve(process.cwd(), '.env.local') });
 
 async function seed() {
     try {
@@ -80,6 +85,42 @@ async function seed() {
             console.log(`   Name: ${adminUser2.name}`);
             console.log(`   Role: ${adminUser2.role}`);
             console.log(`   ID: ${adminUser2._id}`);
+        }
+
+        // Check if third admin user already exists
+        const existingAdmin3 = await findUserByEmail('rehanaleey522@gmail.com');
+        const hashedPassword3 = await hashPassword('Resh@n522');
+
+        if (existingAdmin3) {
+            console.log('🔄 Admin user (rehanaleey522@gmail.com) already exists, updating password...');
+            const collection = await getUserCollection();
+            await collection.updateOne(
+                { email: 'rehanaleey522@gmail.com' },
+                {
+                    $set: {
+                        password: hashedPassword3,
+                        updatedAt: new Date()
+                    }
+                }
+            );
+            console.log('✅ Admin user password updated successfully!');
+            console.log(`   Email: ${existingAdmin3.email}`);
+            console.log(`   Name: ${existingAdmin3.name}`);
+            console.log(`   Role: ${existingAdmin3.role}`);
+            console.log(`   ID: ${existingAdmin3._id}`);
+        } else {
+            console.log('📝 Creating admin user (rehanaleey522@gmail.com)...');
+            const adminUser3 = await createUser({
+                email: 'rehanaleey522@gmail.com',
+                password: hashedPassword3,
+                name: 'Rehan',
+                role: 'admin',
+            });
+            console.log('✅ Admin user created successfully!');
+            console.log(`   Email: ${adminUser3.email}`);
+            console.log(`   Name: ${adminUser3.name}`);
+            console.log(`   Role: ${adminUser3.role}`);
+            console.log(`   ID: ${adminUser3._id}`);
         }
 
         console.log('✅ Seed completed successfully!');
