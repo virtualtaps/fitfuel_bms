@@ -110,7 +110,7 @@ export default function InvoiceDocument({ invoice, companyInfo, productsMap }: I
                                         <div style={{
                                             display: "flex", alignItems: "flex-start",
                                             justifyContent: "space-between", gap: "16px",
-                                            padding: "18px 0",
+                                            padding: "18px 0 4px 0",
                                         }}>
                                             <span style={{
                                                 fontWeight: 700, fontSize: "14px", color: "#111",
@@ -130,6 +130,14 @@ export default function InvoiceDocument({ invoice, companyInfo, productsMap }: I
                                                         {arabicName}
                                                     </div>
                                                 )}
+                                                <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>
+                                                    {item.quantity} × QAR {item.rate.toLocaleString()}
+                                                    {(item.discount ?? 0) > 0 && (
+                                                        <span style={{ color: "#c0392b", marginLeft: "6px" }}>
+                                                            − disc. QAR {(item.discount!).toLocaleString()}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <span style={{
                                                 fontWeight: 700, fontSize: "14px", color: "#111",
@@ -138,6 +146,7 @@ export default function InvoiceDocument({ invoice, companyInfo, productsMap }: I
                                                 QAR {amount.toLocaleString()}
                                             </span>
                                         </div>
+                                        <div style={{ paddingBottom: "14px" }} />
                                         <div style={{ borderTop: "2px dashed #bbb" }} />
                                     </div>
                                 );

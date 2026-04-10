@@ -38,6 +38,7 @@ export default function CreateInvoicePage() {
     const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
     const [focusTargetId, setFocusTargetId] = useState<number | null>(null);
+    const [scannerEnabled, setScannerEnabled] = useState(false);
 
     // Product selection state
     const [products, setProducts] = useState<ProductResponse[]>([]);
@@ -324,10 +325,10 @@ export default function CreateInvoicePage() {
     // Calculate subtotal (regular items) and returns separately
     const subtotal = items
         .filter(item => !item.isReturn)
-        .reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+        .reduce((sum, item) => sum + (item.quantity * item.rate - (item.discount || 0)), 0);
     const returns = items
         .filter(item => item.isReturn)
-        .reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+        .reduce((sum, item) => sum + (item.quantity * item.rate - (item.discount || 0)), 0);
     const netSubtotal = subtotal - returns;
     const discountPct = discountPercentage !== null ? discountPercentage : 0;
     const discountAmount = netSubtotal * discountPct / 100;
@@ -420,6 +421,7 @@ export default function CreateInvoicePage() {
                 description: item.description,
                 quantity: item.isReturn ? -Math.abs(item.quantity) : item.quantity,
                 rate: item.rate,
+                discount: item.discount || 0,
                 productId: item.productId,
             }));
 
@@ -505,6 +507,7 @@ export default function CreateInvoicePage() {
                 description: item.description,
                 quantity: item.isReturn ? -Math.abs(item.quantity) : item.quantity,
                 rate: item.rate,
+                discount: item.discount || 0,
                 productId: item.productId,
             }));
 
@@ -622,13 +625,20 @@ export default function CreateInvoicePage() {
                                 isSearchingProducts={isSearchingProducts}
                                 onProductSearchChange={handleProductSearchChange}
                                 onProductSelect={selectProduct}
-                                onProductSearchFocus={(itemId) => setShowProductDropdown({ ...showProductDropdown, [itemId]: true })}
+                                onProductSearchFocus={(itemId) => {
+                                    const query = productSearchQueries[itemId] || "";
+                                    if (query.length > 0) {
+                                        setShowProductDropdown({ ...showProductDropdown, [itemId]: true });
+                                    }
+                                }}
                                 onProductSearchBlur={(itemId) => {
                                     setTimeout(() => {
                                         setShowProductDropdown({ ...showProductDropdown, [itemId]: false });
                                     }, 200);
                                 }}
                                 filteredProducts={filteredProducts}
+                                scannerEnabled={scannerEnabled}
+                                onToggleScanner={() => setScannerEnabled(prev => !prev)}
                             />
 
                             <PaymentMethodSection
@@ -681,8 +691,8 @@ export default function CreateInvoicePage() {
 
             <PhysicalScannerInput
                 onScan={handleGlobalScan}
-                enabled={true}
-                showIndicator={true}
+                enabled={scannerEnabled}
+                showIndicator={false}
             />
         </DashboardLayout>
     );

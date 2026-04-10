@@ -35,6 +35,7 @@ export function PhysicalScannerInput({
             <input
                 ref={inputRef}
                 type="text"
+                data-scanner-input="true"
                 style={{
                     position: 'absolute',
                     left: '-9999px',
@@ -45,6 +46,7 @@ export function PhysicalScannerInput({
                 tabIndex={-1}
                 autoComplete="off"
                 aria-hidden="true"
+                readOnly
             />
             {/* Visual indicator */}
             {showIndicator && isActive && enabled && (

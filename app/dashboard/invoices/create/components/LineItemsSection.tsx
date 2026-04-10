@@ -16,7 +16,7 @@ import {
     List,
     Icon,
 } from "@chakra-ui/react";
-import { LuPlus, LuTrash2, LuPackage } from "react-icons/lu";
+import { LuPlus, LuTrash2, LuPackage, LuScanLine, LuX } from "react-icons/lu";
 import { ProductResponse } from "@/lib/models/Product";
 
 export interface InvoiceItem {
@@ -24,6 +24,7 @@ export interface InvoiceItem {
     description: string;
     quantity: number;
     rate: number;
+    discount?: number; // Per-item discount amount
     isReturn?: boolean;
     productId?: string;
     productStock?: number; // Store product stock for validation
@@ -44,6 +45,8 @@ interface LineItemsSectionProps {
     onProductSearchFocus: (itemId: number) => void;
     onProductSearchBlur: (itemId: number) => void;
     filteredProducts: (itemId: number) => ProductResponse[];
+    scannerEnabled: boolean;
+    onToggleScanner: () => void;
 }
 
 export default function LineItemsSection({
@@ -61,12 +64,29 @@ export default function LineItemsSection({
     onProductSearchFocus,
     onProductSearchBlur,
     filteredProducts,
+    scannerEnabled,
+    onToggleScanner,
 }: LineItemsSectionProps) {
     return (
         <Card.Root border="1px solid" borderColor="border.default" bg="bg.surface">
             <Card.Header p={5} pb={0}>
                 <Flex justify="space-between" align="center">
-                    <Heading size="sm" fontWeight="semibold">Line Items</Heading>
+                    <HStack gap={2}>
+                        <Heading size="sm" fontWeight="semibold">Line Items</Heading>
+                        <Button
+                            size="xs"
+                            variant={scannerEnabled ? "solid" : "outline"}
+                            colorPalette={scannerEnabled ? "green" : "gray"}
+                            onClick={onToggleScanner}
+                            gap={1}
+                        >
+                            <Icon fontSize="xs">
+                                {scannerEnabled ? <LuScanLine /> : <LuScanLine />}
+                            </Icon>
+                            {scannerEnabled ? "Scanning ON" : "Scan"}
+                            {scannerEnabled && <Icon fontSize="xs"><LuX /></Icon>}
+                        </Button>
+                    </HStack>
                     <Button variant="ghost" size="xs" onClick={onAddItem}>
                         <LuPlus /> Add Item
                     </Button>
@@ -224,6 +244,28 @@ export default function LineItemsSection({
                                         bg={item.isReturn ? "red.50" : undefined}
                                     />
                                 </Box>
+                                <Box w={{ base: "90px", md: "90px" }} flexShrink={0}>
+                                    {index === 0 && <Text fontSize="xs" color="fg.muted" mb={1}>Disc. (QAR)</Text>}
+                                    <Input
+                                        type="number"
+                                        size={{ base: "md", md: "sm" }}
+                                        placeholder="0"
+                                        value={!item.discount ? '' : item.discount}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '') {
+                                                onUpdateItem(item.id, 'discount', 0);
+                                            } else {
+                                                const numValue = parseFloat(value);
+                                                if (!isNaN(numValue) && numValue >= 0) {
+                                                    onUpdateItem(item.id, 'discount', numValue);
+                                                }
+                                            }
+                                        }}
+                                        borderColor={item.isReturn ? "red.300" : undefined}
+                                        bg={item.isReturn ? "red.50" : undefined}
+                                    />
+                                </Box>
                                 <Box w={{ base: "100px", md: "100px" }} flexShrink={0}>
                                     {index === 0 && <Text fontSize="xs" color="fg.muted" mb={1}>Amount</Text>}
                                     <Text
@@ -231,7 +273,7 @@ export default function LineItemsSection({
                                         py={2}
                                         color={item.isReturn ? "red.600" : undefined}
                                     >
-                                        {item.isReturn ? "-" : ""}QAR {(item.quantity * item.rate).toLocaleString()}
+                                        {item.isReturn ? "-" : ""}QAR {(item.quantity * item.rate - (item.discount || 0)).toLocaleString()}
                                     </Text>
                                 </Box>
                                 <Box w={{ base: "80px", md: "80px" }} flexShrink={0}>
@@ -409,6 +451,27 @@ export default function LineItemsSection({
                                                 borderColor={item.isReturn ? "red.300" : undefined}
                                             />
                                         </Field.Root>
+                                        <Field.Root>
+                                            <Field.Label fontSize="xs">Discount (QAR)</Field.Label>
+                                            <Input
+                                                type="number"
+                                                size="sm"
+                                                placeholder="0"
+                                                value={!item.discount ? '' : item.discount}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    if (value === '') {
+                                                        onUpdateItem(item.id, 'discount', 0);
+                                                    } else {
+                                                        const numValue = parseFloat(value);
+                                                        if (!isNaN(numValue) && numValue >= 0) {
+                                                            onUpdateItem(item.id, 'discount', numValue);
+                                                        }
+                                                    }
+                                                }}
+                                                borderColor={item.isReturn ? "red.300" : undefined}
+                                            />
+                                        </Field.Root>
                                     </SimpleGrid>
                                     <Flex justify="space-between" align="center" gap={2}>
                                         <Button
@@ -423,7 +486,7 @@ export default function LineItemsSection({
                                         <HStack gap={2} flex={1} justify="flex-end">
                                             <Text fontSize="sm" color="fg.muted">
                                                 Amount: <Text as="span" fontWeight="semibold" color={item.isReturn ? "red.600" : "gray.800"}>
-                                                    {item.isReturn ? "-" : ""}QAR {(item.quantity * item.rate).toLocaleString()}
+                                                    {item.isReturn ? "-" : ""}QAR {(item.quantity * item.rate - (item.discount || 0)).toLocaleString()}
                                                 </Text>
                                             </Text>
                                             <IconButton

@@ -10,6 +10,7 @@ export interface InvoiceItem {
     description: string;
     quantity: number;
     rate: number;
+    discount?: number; // Per-item discount amount
     amount: number;
     productId?: string; // Reference to product in inventory
     buyingPrice?: number; // Cost at time of sale for COGS tracking

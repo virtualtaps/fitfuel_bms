@@ -111,9 +111,11 @@ async function postHandler(request: AuthenticatedRequest) {
                 const product = await findProductById(item.productId);
                 buyingPrice = product?.buyingPrice ?? 0;
             }
+            const itemDiscount = item.discount ?? 0;
             return {
                 ...item,
-                amount: item.quantity * item.rate,
+                discount: itemDiscount,
+                amount: item.quantity * item.rate - itemDiscount,
                 productId: item.productId,
                 buyingPrice,
             };

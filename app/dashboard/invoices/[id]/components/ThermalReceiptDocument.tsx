@@ -130,6 +130,11 @@ export default function ThermalReceiptDocument({
                                         )}
                                         <div style={S.small}>
                                             {item.quantity} × QAR {item.rate.toLocaleString()}
+                                            {(item.discount ?? 0) > 0 && (
+                                                <span style={{ color: "#c0392b", marginLeft: "4px" }}>
+                                                    − disc. {(item.discount!).toLocaleString()}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <span style={{ ...S.bold, flexShrink: 0, paddingLeft: "6px" }}>

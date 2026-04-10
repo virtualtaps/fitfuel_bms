@@ -23,7 +23,7 @@ export function usePhysicalScanner({
 
     const processScan = useCallback((value: string) => {
         const now = Date.now();
-        
+
         // Debounce: ignore duplicate scans within debounceTime
         if (value === lastScanRef.current && (now - lastScanTimeRef.current) < debounceTime) {
             return;
@@ -37,6 +37,20 @@ export function usePhysicalScanner({
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (!enabled || !isActive) return;
+
+        // Don't intercept when the user is typing in a real input.
+        // We identify the scanner's own hidden input via data-scanner-input so it is excluded.
+        const activeEl = document.activeElement as HTMLElement | null;
+        const isUserTyping =
+            activeEl &&
+            !activeEl.hasAttribute('data-scanner-input') &&
+            (
+                activeEl.tagName === 'INPUT' ||
+                activeEl.tagName === 'TEXTAREA' ||
+                activeEl.isContentEditable
+            );
+
+        if (isUserTyping) return;
 
         const now = Date.now();
         const timeSinceLastKey = now - lastKeyTimeRef.current;
@@ -67,19 +81,14 @@ export function usePhysicalScanner({
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
             const isFirstChar = timeSinceLastKey === 0;
             const isRapidInput = !isFirstChar && timeSinceLastKey < scanTimeout;
-            
+
             if (isRapidInput) {
-                // Rapid input - likely from scanner; prevent char going into focused inputs
                 e.preventDefault();
                 bufferRef.current += e.key;
                 lastKeyTimeRef.current = now;
 
-                // Clear any existing timeout
-                if (timeoutRef.current) {
-                    clearTimeout(timeoutRef.current);
-                }
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-                // Set timeout to process scan if no more input comes
                 timeoutRef.current = setTimeout(() => {
                     if (bufferRef.current.trim().length > 0) {
                         processScan(bufferRef.current.trim());
@@ -87,37 +96,45 @@ export function usePhysicalScanner({
                     bufferRef.current = '';
                 }, scanTimeout * 2);
             } else {
-                // Slow input or first character - likely manual typing
-                // Reset buffer and start fresh
+                // First character or slow input — likely manual typing; reset buffer
                 bufferRef.current = e.key;
                 lastKeyTimeRef.current = now;
-                
-                // Clear any existing timeout
-                if (timeoutRef.current) {
-                    clearTimeout(timeoutRef.current);
-                }
+
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
             }
         }
     }, [enabled, isActive, scanTimeout, processScan]);
 
     useEffect(() => {
-        if (!enabled || !isActive) {
-            return;
-        }
+        if (!enabled || !isActive) return;
 
-        // Focus the input when active
-        if (inputRef.current) {
-            inputRef.current.focus();
-        }
+        // Focus the hidden scanner input so it captures keystrokes by default
+        inputRef.current?.focus();
 
-        // Add global keydown listener
         window.addEventListener('keydown', handleKeyDown);
+
+        // When the user clicks on something that is NOT a real text input, refocus
+        // the hidden scanner input so scanning stays ready.
+        const handleWindowClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const clickedRealInput =
+                (target.tagName === 'INPUT' && !target.hasAttribute('data-scanner-input')) ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable;
+
+            if (!clickedRealInput) {
+                // Small delay lets other click handlers (buttons, etc.) run first
+                setTimeout(() => inputRef.current?.focus(), 0);
+            }
+        };
+
+        // Use capture so we see the click before other handlers steal focus
+        window.addEventListener('click', handleWindowClick, true);
 
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
+            window.removeEventListener('click', handleWindowClick, true);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, [enabled, isActive, handleKeyDown]);
 
@@ -131,9 +148,7 @@ export function usePhysicalScanner({
         setIsActive(false);
         bufferRef.current = '';
         lastKeyTimeRef.current = 0;
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }, []);
 
     return {

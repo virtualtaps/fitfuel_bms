@@ -105,6 +105,7 @@ export default function EditInvoicePage() {
                         description: item.description,
                         quantity: Math.abs(item.quantity),
                         rate: item.rate,
+                        discount: item.discount || 0,
                         isReturn: isReturn,
                         productId: item.productId,
                     };
@@ -295,10 +296,10 @@ export default function EditInvoicePage() {
     // Calculate subtotal (regular items) and returns separately
     const subtotal = items
         .filter(item => !item.isReturn)
-        .reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+        .reduce((sum, item) => sum + (item.quantity * item.rate - (item.discount || 0)), 0);
     const returns = items
         .filter(item => item.isReturn)
-        .reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+        .reduce((sum, item) => sum + (item.quantity * item.rate - (item.discount || 0)), 0);
     const netSubtotal = subtotal - returns;
     const discountPct = discountPercentage !== null ? discountPercentage : 0;
     const discountAmount = netSubtotal * discountPct / 100;
@@ -357,6 +358,7 @@ export default function EditInvoicePage() {
                 description: item.description,
                 quantity: item.isReturn ? -Math.abs(item.quantity) : item.quantity,
                 rate: item.rate,
+                discount: item.discount || 0,
                 productId: item.productId,
             }));
 
@@ -457,6 +459,7 @@ export default function EditInvoicePage() {
                 description: item.description,
                 quantity: item.isReturn ? -Math.abs(item.quantity) : item.quantity,
                 rate: item.rate,
+                discount: item.discount || 0,
                 productId: item.productId,
             }));
 

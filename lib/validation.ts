@@ -52,6 +52,7 @@ export const invoiceItemSchema = z.object({
         message: 'Quantity cannot be zero',
     }), // Allow negative for returns, but not zero
     rate: z.number().min(0, 'Rate cannot be negative'),
+    discount: z.number().min(0, 'Discount cannot be negative').optional().default(0),
     productId: z.string().optional(), // Reference to product in inventory
 });
 
