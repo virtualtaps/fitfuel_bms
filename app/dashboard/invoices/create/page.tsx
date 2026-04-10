@@ -37,6 +37,7 @@ export default function CreateInvoicePage() {
     const [isSending, setIsSending] = useState(false);
     const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
+    const [focusTargetId, setFocusTargetId] = useState<number | null>(null);
 
     // Product selection state
     const [products, setProducts] = useState<ProductResponse[]>([]);
@@ -55,6 +56,14 @@ export default function CreateInvoicePage() {
     useEffect(() => {
         fetchProducts("");
     }, []);
+
+    // Focus the description input of the target item after a scan
+    useEffect(() => {
+        if (focusTargetId === null) return;
+        const el = document.querySelector<HTMLInputElement>(`input[data-item-id="${focusTargetId}"]`);
+        if (el) el.focus();
+        setFocusTargetId(null);
+    }, [focusTargetId]);
 
     const fetchClients = async (searchQuery: string = "") => {
         try {
@@ -187,6 +196,11 @@ export default function CreateInvoicePage() {
                         description: `${product.name} ×${existingItem.quantity + 1}`,
                         type: "success",
                     });
+                    // Focus a new empty row or the existing item row
+                    const emptyAfter = items.find(item => !item.description && !item.productId);
+                    if (emptyAfter) {
+                        setFocusTargetId(emptyAfter.id);
+                    }
                 } else {
                     // Find an empty slot or add new item
                     const emptyItem = items.find(item => !item.description && !item.productId);
@@ -198,6 +212,10 @@ export default function CreateInvoicePage() {
                                 : item
                         ));
                         setProductSearchQueries(prev => ({ ...prev, [emptyItem.id]: product.name }));
+                        // Add a new row and focus it
+                        const newId = Date.now();
+                        setItems(prev => [...prev, { id: newId, description: "", quantity: 1, rate: 0, isReturn: false }]);
+                        setFocusTargetId(newId);
                     } else {
                         const newId = Date.now();
                         setItems(prev => [...prev, {
@@ -210,6 +228,10 @@ export default function CreateInvoicePage() {
                             productStock: product.stock,
                         }]);
                         setProductSearchQueries(prev => ({ ...prev, [newId]: product.name }));
+                        // Add another empty row and focus it
+                        const nextId = Date.now() + 1;
+                        setItems(prev => [...prev, { id: nextId, description: "", quantity: 1, rate: 0, isReturn: false }]);
+                        setFocusTargetId(nextId);
                     }
 
                     toaster.create({

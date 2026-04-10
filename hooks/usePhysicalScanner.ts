@@ -69,7 +69,8 @@ export function usePhysicalScanner({
             const isRapidInput = !isFirstChar && timeSinceLastKey < scanTimeout;
             
             if (isRapidInput) {
-                // Rapid input - likely from scanner
+                // Rapid input - likely from scanner; prevent char going into focused inputs
+                e.preventDefault();
                 bufferRef.current += e.key;
                 lastKeyTimeRef.current = now;
 

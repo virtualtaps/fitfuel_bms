@@ -84,6 +84,7 @@ export default function LineItemsSection({
                                         <Input
                                             placeholder="Search product or enter description"
                                             size={{ base: "md", md: "sm" }}
+                                            data-item-id={item.id}
                                             value={productSearchQueries[item.id] !== undefined && productSearchQueries[item.id] !== "" ? productSearchQueries[item.id] : item.description}
                                             onChange={(e) => onProductSearchChange(item.id, e.target.value)}
                                             onFocus={() => onProductSearchFocus(item.id)}
@@ -276,6 +277,7 @@ export default function LineItemsSection({
                                             <Input
                                                 placeholder="Search product or enter description"
                                                 size="md"
+                                                data-item-id={item.id}
                                                 value={productSearchQueries[item.id] !== undefined && productSearchQueries[item.id] !== "" ? productSearchQueries[item.id] : item.description}
                                                 onChange={(e) => onProductSearchChange(item.id, e.target.value)}
                                                 onFocus={() => onProductSearchFocus(item.id)}
