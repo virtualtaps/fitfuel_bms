@@ -18,6 +18,7 @@ import NotesSection from "./components/NotesSection";
 import InvoiceSummary from "./components/InvoiceSummary";
 import SendInvoiceDialog from "./components/SendInvoiceDialog";
 import DiscardDialog from "./components/DiscardDialog";
+import { PhysicalScannerInput } from "@/components/scanner/PhysicalScannerInput";
 
 export default function CreateInvoicePage() {
     const router = useRouter();
@@ -165,21 +166,59 @@ export default function CreateInvoicePage() {
         setShowProductDropdown({ ...showProductDropdown, [itemId]: false });
     };
 
-    const handleBarcodeScan = async (itemId: number, barcode: string) => {
+    const handleGlobalScan = async (barcode: string) => {
         try {
-            // Search for product by SKU
             const response = await apiClient.get<ProductResponse>(`/api/inventory/search-by-sku?sku=${encodeURIComponent(barcode)}`);
 
             if (response.success && response.data) {
-                // Product found - auto-select it
-                selectProduct(itemId, response.data);
-                toaster.create({
-                    title: "Product found",
-                    description: `${response.data.name} has been added.`,
-                    type: "success",
-                });
+                const product = response.data;
+
+                const existingItem = items.find(item => item.productId === product.id);
+
+                if (existingItem) {
+                    // Increment quantity of existing line item
+                    setItems(prev => prev.map(item =>
+                        item.id === existingItem.id
+                            ? { ...item, quantity: item.quantity + 1 }
+                            : item
+                    ));
+                    toaster.create({
+                        title: "Quantity updated",
+                        description: `${product.name} ×${existingItem.quantity + 1}`,
+                        type: "success",
+                    });
+                } else {
+                    // Find an empty slot or add new item
+                    const emptyItem = items.find(item => !item.description && !item.productId);
+
+                    if (emptyItem) {
+                        setItems(prev => prev.map(item =>
+                            item.id === emptyItem.id
+                                ? { ...item, description: product.name, rate: product.sellingPrice, productId: product.id, productStock: product.stock }
+                                : item
+                        ));
+                        setProductSearchQueries(prev => ({ ...prev, [emptyItem.id]: product.name }));
+                    } else {
+                        const newId = Date.now();
+                        setItems(prev => [...prev, {
+                            id: newId,
+                            description: product.name,
+                            quantity: 1,
+                            rate: product.sellingPrice,
+                            isReturn: false,
+                            productId: product.id,
+                            productStock: product.stock,
+                        }]);
+                        setProductSearchQueries(prev => ({ ...prev, [newId]: product.name }));
+                    }
+
+                    toaster.create({
+                        title: "Product added",
+                        description: product.name,
+                        type: "success",
+                    });
+                }
             } else {
-                // Product not found
                 toaster.create({
                     title: "Product not found",
                     description: `No product found with SKU: ${barcode}`,
@@ -568,7 +607,6 @@ export default function CreateInvoicePage() {
                                     }, 200);
                                 }}
                                 filteredProducts={filteredProducts}
-                                onScanBarcode={handleBarcodeScan}
                             />
 
                             <PaymentMethodSection
@@ -617,6 +655,12 @@ export default function CreateInvoicePage() {
                 isOpen={discardDialogOpen}
                 onClose={() => setDiscardDialogOpen(false)}
                 onConfirm={handleDiscard}
+            />
+
+            <PhysicalScannerInput
+                onScan={handleGlobalScan}
+                enabled={true}
+                showIndicator={true}
             />
         </DashboardLayout>
     );

@@ -18,7 +18,6 @@ import {
 } from "@chakra-ui/react";
 import { LuPlus, LuTrash2, LuPackage } from "react-icons/lu";
 import { ProductResponse } from "@/lib/models/Product";
-import { ScannerButton } from "@/components/scanner/ScannerButton";
 
 export interface InvoiceItem {
     id: number;
@@ -45,7 +44,6 @@ interface LineItemsSectionProps {
     onProductSearchFocus: (itemId: number) => void;
     onProductSearchBlur: (itemId: number) => void;
     filteredProducts: (itemId: number) => ProductResponse[];
-    onScanBarcode?: (itemId: number, barcode: string) => void;
 }
 
 export default function LineItemsSection({
@@ -63,7 +61,6 @@ export default function LineItemsSection({
     onProductSearchFocus,
     onProductSearchBlur,
     filteredProducts,
-    onScanBarcode,
 }: LineItemsSectionProps) {
     return (
         <Card.Root border="1px solid" borderColor="border.default" bg="bg.surface">
@@ -84,26 +81,16 @@ export default function LineItemsSection({
                                 <Box flex={{ base: 1, md: 3, lg: 4 }} minW={{ base: "100%", md: "200px", lg: "250px" }} position="relative">
                                     {index === 0 && <Text fontSize="xs" color="fg.muted" mb={1}>Description</Text>}
                                     <Box position="relative">
-                                        <HStack gap={1}>
-                                            <Input
-                                                placeholder="Search product or enter description"
-                                                size={{ base: "md", md: "sm" }}
-                                                value={productSearchQueries[item.id] !== undefined && productSearchQueries[item.id] !== "" ? productSearchQueries[item.id] : item.description}
-                                                onChange={(e) => onProductSearchChange(item.id, e.target.value)}
-                                                onFocus={() => onProductSearchFocus(item.id)}
-                                                onBlur={() => onProductSearchBlur(item.id)}
-                                                borderColor={item.isReturn ? "red.300" : undefined}
-                                                bg={item.isReturn ? "red.50" : undefined}
-                                                flex={1}
-                                            />
-                                            {onScanBarcode && (
-                                                <ScannerButton
-                                                    onScan={(barcode) => onScanBarcode(item.id, barcode)}
-                                                    size="sm"
-                                                    variant="outline"
-                                                />
-                                            )}
-                                        </HStack>
+                                        <Input
+                                            placeholder="Search product or enter description"
+                                            size={{ base: "md", md: "sm" }}
+                                            value={productSearchQueries[item.id] !== undefined && productSearchQueries[item.id] !== "" ? productSearchQueries[item.id] : item.description}
+                                            onChange={(e) => onProductSearchChange(item.id, e.target.value)}
+                                            onFocus={() => onProductSearchFocus(item.id)}
+                                            onBlur={() => onProductSearchBlur(item.id)}
+                                            borderColor={item.isReturn ? "red.300" : undefined}
+                                            bg={item.isReturn ? "red.50" : undefined}
+                                        />
                                         {showProductDropdown[item.id] && (
                                             <Box
                                                 position="absolute"
@@ -286,25 +273,15 @@ export default function LineItemsSection({
                                     <Field.Root>
                                         <Field.Label fontSize="xs">Description</Field.Label>
                                         <Box position="relative">
-                                            <HStack gap={1}>
-                                                <Input
-                                                    placeholder="Search product or enter description"
-                                                    size="md"
-                                                    value={productSearchQueries[item.id] !== undefined && productSearchQueries[item.id] !== "" ? productSearchQueries[item.id] : item.description}
-                                                    onChange={(e) => onProductSearchChange(item.id, e.target.value)}
-                                                    onFocus={() => onProductSearchFocus(item.id)}
-                                                    onBlur={() => onProductSearchBlur(item.id)}
-                                                    borderColor={item.isReturn ? "red.300" : undefined}
-                                                    flex={1}
-                                                />
-                                                {onScanBarcode && (
-                                                    <ScannerButton
-                                                        onScan={(barcode) => onScanBarcode(item.id, barcode)}
-                                                        size="sm"
-                                                        variant="outline"
-                                                    />
-                                                )}
-                                            </HStack>
+                                            <Input
+                                                placeholder="Search product or enter description"
+                                                size="md"
+                                                value={productSearchQueries[item.id] !== undefined && productSearchQueries[item.id] !== "" ? productSearchQueries[item.id] : item.description}
+                                                onChange={(e) => onProductSearchChange(item.id, e.target.value)}
+                                                onFocus={() => onProductSearchFocus(item.id)}
+                                                onBlur={() => onProductSearchBlur(item.id)}
+                                                borderColor={item.isReturn ? "red.300" : undefined}
+                                            />
                                             {showProductDropdown[item.id] && filteredProducts(item.id).length > 0 && (
                                                 <Box
                                                     position="absolute"

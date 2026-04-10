@@ -131,9 +131,9 @@ async function postHandler(request: AuthenticatedRequest) {
         // Convert expiryDate string to Date if provided
         const productData = {
             ...validatedData,
-            expiryDate: validatedData.expiryDate 
-                ? (typeof validatedData.expiryDate === 'string' 
-                    ? new Date(validatedData.expiryDate) 
+            expiryDate: validatedData.expiryDate
+                ? (typeof validatedData.expiryDate === 'string'
+                    ? new Date(validatedData.expiryDate)
                     : validatedData.expiryDate)
                 : undefined,
         };
