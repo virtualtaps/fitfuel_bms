@@ -536,9 +536,7 @@ export default function QuotationDetailPage() {
                             <Button variant="outline" size="sm" loading={isPrinting} onClick={handlePrint}>
                                 <LuPrinter /> Print
                             </Button>
-                            <Button variant="outline" size="sm" loading={isDownloading} onClick={handleDownload}>
-                                <LuDownload /> Download
-                            </Button>
+                            
                             <Link href={`/dashboard/quotations/${quotationId}/edit`}>
                                 <Button variant="outline" size="sm">
                                     <LuPencil /> Edit
