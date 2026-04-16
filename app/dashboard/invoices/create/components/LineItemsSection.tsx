@@ -45,8 +45,8 @@ interface LineItemsSectionProps {
     onProductSearchFocus: (itemId: number) => void;
     onProductSearchBlur: (itemId: number) => void;
     filteredProducts: (itemId: number) => ProductResponse[];
-    scannerEnabled: boolean;
-    onToggleScanner: () => void;
+    scannerEnabled?: boolean;
+    onToggleScanner?: () => void;
 }
 
 export default function LineItemsSection({
@@ -64,7 +64,7 @@ export default function LineItemsSection({
     onProductSearchFocus,
     onProductSearchBlur,
     filteredProducts,
-    scannerEnabled,
+    scannerEnabled = false,
     onToggleScanner,
 }: LineItemsSectionProps) {
     return (
@@ -73,19 +73,21 @@ export default function LineItemsSection({
                 <Flex justify="space-between" align="center">
                     <HStack gap={2}>
                         <Heading size="sm" fontWeight="semibold">Line Items</Heading>
-                        <Button
-                            size="xs"
-                            variant={scannerEnabled ? "solid" : "outline"}
-                            colorPalette={scannerEnabled ? "green" : "gray"}
-                            onClick={onToggleScanner}
-                            gap={1}
-                        >
-                            <Icon fontSize="xs">
-                                {scannerEnabled ? <LuScanLine /> : <LuScanLine />}
-                            </Icon>
-                            {scannerEnabled ? "Scanning ON" : "Scan"}
-                            {scannerEnabled && <Icon fontSize="xs"><LuX /></Icon>}
-                        </Button>
+                        {onToggleScanner && (
+                            <Button
+                                size="xs"
+                                variant={scannerEnabled ? "solid" : "outline"}
+                                colorPalette={scannerEnabled ? "green" : "gray"}
+                                onClick={onToggleScanner}
+                                gap={1}
+                            >
+                                <Icon fontSize="xs">
+                                    {scannerEnabled ? <LuScanLine /> : <LuScanLine />}
+                                </Icon>
+                                {scannerEnabled ? "Scanning ON" : "Scan"}
+                                {scannerEnabled && <Icon fontSize="xs"><LuX /></Icon>}
+                            </Button>
+                        )}
                     </HStack>
                     <Button variant="ghost" size="xs" onClick={onAddItem}>
                         <LuPlus /> Add Item
